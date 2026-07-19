@@ -7,8 +7,8 @@ import os
 # ---------------------------------------------------
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
-# Load Gemini model
-model = genai.GenerativeModel("models/gemini-pro")
+# Load Gemini model (stable for current SDK)
+model = genai.GenerativeModel("gemini-pro")
 
 # Create Flask app
 app = Flask(__name__)
@@ -71,17 +71,6 @@ def home():
         "message": "BikkyChem AI backend is running successfully"
     })
 
-@app.route('/test')
-def test():
-    return jsonify({
-        "status": "success",
-        "message": "BikkyChem test route is working"
-    })
-
-@app.route('/solve', methods=['POST'])
-def solve():
-    ...
-
 # ---------------------------------------------------
 # Test Route
 # ---------------------------------------------------
@@ -94,7 +83,11 @@ def test():
             SYSTEM_PROMPT + "\n\nQuestion: " + question
         )
 
-        return response.text
+        return jsonify({
+            "status": "success",
+            "question": question,
+            "response": response.text
+        })
 
     except Exception as e:
         return jsonify({
@@ -124,7 +117,6 @@ def solve():
                 "message": "Question cannot be empty."
             }), 400
 
-        # Generate AI response
         response = model.generate_content(
             SYSTEM_PROMPT + "\n\nQuestion: " + question
         )
