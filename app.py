@@ -13,6 +13,14 @@ def home():
         'app': 'BikkyChem',
     'status;: 'live',
     'message': 'BikkyChem AI backend is running successfully'
+    }
+    @app.route('/test')
+    def test():
+    question = "Calculate the volume occupied by 0.5 mol of an ideal gas at STP."
+    response = model.generate_content(
+    SYSTEM_PROMPT + "\n\nQuestion: " + question
+    )
+    return response.text
 # BikkyChem system instruction
 SYSTEM_PROMPT = """
 You are **BikkyChem**, an AI chemistry mentor created by **Bikulay**, a higher-secondary chemistry teacher from India.
