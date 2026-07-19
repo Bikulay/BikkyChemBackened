@@ -8,7 +8,7 @@ import os
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
 # Load Gemini model
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
+model = genai.GenerativeModel("models/gemini-1.5-flash")
 
 # Create Flask app
 app = Flask(__name__)
