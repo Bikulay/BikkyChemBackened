@@ -10,7 +10,7 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     return {
-        'app': BikkyChem',
+        'app': 'BikkyChem',
     'status;: 'live',
     'message': 'BikkyChem AI backend is running successfully'
 # BikkyChem system instruction
