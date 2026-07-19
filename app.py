@@ -71,6 +71,17 @@ def home():
         "message": "BikkyChem AI backend is running successfully"
     })
 
+@app.route('/test')
+def test():
+    return jsonify({
+        "status": "success",
+        "message": "BikkyChem test route is working"
+    })
+
+@app.route('/solve', methods=['POST'])
+def solve():
+    ...
+
 # ---------------------------------------------------
 # Test Route
 # ---------------------------------------------------
