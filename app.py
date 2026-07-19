@@ -76,13 +76,20 @@ def home():
 # ---------------------------------------------------
 @app.route('/test')
 def test():
-    question = "Calculate the volume occupied by 0.5 mol of an ideal gas at STP."
+    try:
+        question = "Calculate the volume occupied by 0.5 mol of an ideal gas at STP."
 
-    response = model.generate_content(
-        SYSTEM_PROMPT + "\n\nQuestion: " + question
-    )
+        response = model.generate_content(
+            SYSTEM_PROMPT + "\n\nQuestion: " + question
+        )
 
-    return response.text
+        return response.text
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 # ---------------------------------------------------
 # Main Solve API
