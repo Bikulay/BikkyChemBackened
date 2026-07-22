@@ -5,7 +5,7 @@ import os
 # ---------------------------------------------------
 # Configure Gemini API
 # ---------------------------------------------------
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+genai.configure(api_key=os.environ["AQ.Ab8RN6IBfi0OLZlq04M6CXfNFLaqoq8bcZIo98Ar1G-KnFSbXw"])
 
 # Load Gemini model (stable for current SDK)
 model = genai.GenerativeModel("gemini-2.0-flash")
