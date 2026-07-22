@@ -3,17 +3,6 @@ import google.generativeai as genai
 import os
 
 # ---------------------------------------------------
-# Configure Gemini API
-# ---------------------------------------------------
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-
-# Load Gemini model (stable for current SDK)
-model = genai.GenerativeModel("gemini-2.0-flash")
-
-# Create Flask app
-app = Flask(__name__)
-
-# ---------------------------------------------------
 # BikkyChem System Prompt
 # ---------------------------------------------------
 SYSTEM_PROMPT = """
@@ -61,6 +50,20 @@ Use simple English and a teacher-like tone.
 """
 
 # ---------------------------------------------------
+# Configure Gemini API
+# ---------------------------------------------------
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
+# Pass system prompt directly into the model initializer
+model = genai.GenerativeModel(
+    model_name="gemini-2.0-flash",
+    system_instruction=SYSTEM_PROMPT
+)
+
+# Create Flask app
+app = Flask(__name__)
+
+# ---------------------------------------------------
 # Home Route
 # ---------------------------------------------------
 @app.route('/')
@@ -79,9 +82,7 @@ def test():
     try:
         question = "Calculate the volume occupied by 0.5 mol of an ideal gas at STP."
 
-        response = model.generate_content(
-            SYSTEM_PROMPT + "\n\nQuestion: " + question
-        )
+        response = model.generate_content(question)
 
         return jsonify({
             "status": "success",
@@ -117,9 +118,7 @@ def solve():
                 "message": "Question cannot be empty."
             }), 400
 
-        response = model.generate_content(
-            SYSTEM_PROMPT + "\n\nQuestion: " + question
-        )
+        response = model.generate_content(question)
 
         return jsonify({
             "status": "success",
