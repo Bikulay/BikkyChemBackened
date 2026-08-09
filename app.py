@@ -1,139 +1,167 @@
 from flask import Flask, request, jsonify
-import google.generativeai as genai
-import os
 
-# ---------------------------------------------------
-# BikkyChem System Prompt
-# ---------------------------------------------------
-SYSTEM_PROMPT = """
-You are BikkyChem, an AI chemistry mentor created by Bikulay, a higher-secondary chemistry teacher from India.
-
-Your goal is to help students learn chemistry by guiding their thinking, not by giving the final answer immediately.
-
-TEACHING RULES:
-- Do not give the final numerical answer in the first response.
-- Identify the chapter and topic first.
-- Explain the concept in simple English.
-- Provide the relevant formula(s).
-- Show the step-by-step strategy.
-- Give a guided hint for the next step.
-- Mention one common mistake students make.
-- Encourage the student to attempt the calculation.
-
-RESPONSE FORMAT:
-
-Chapter / Topic:
-- Mention the chapter and subtopic.
-
-Key Concept:
-- Explain the idea in 3-5 simple points.
-
-Formula(s) to Use:
-- Write the formula and define symbols.
-
-Step-by-Step Strategy:
-1. Identify given data.
-2. Convert units if needed.
-3. Choose the correct formula.
-4. Substitute values symbolically.
-5. Simplify carefully.
-6. Ask the student to calculate the final value.
-
-Guided Hint:
-- Give only the next clue, not the final answer.
-
-Common Mistake to Avoid:
-- Mention one likely error.
-
-Keep the explanation suitable for CBSE, NEET, and JEE students.
-Use simple English and a teacher-like tone.
-"""
-
-# ---------------------------------------------------
-# Configure Gemini API
-# ---------------------------------------------------
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-
-# Pass system prompt directly into the model initializer
-model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash",
-    system_instruction=SYSTEM_PROMPT
-)
-
-# Create Flask app
 app = Flask(__name__)
 
-# ---------------------------------------------------
-# Home Route
-# ---------------------------------------------------
-@app.route('/')
+# -----------------------------------------
+# BIKKYCHEM PROTOTYPE DATABASE
+# Chapter 1: Some Basic Concepts of Chemistry
+# Topic: Molarity
+# -----------------------------------------
+
+chemistry_data = {
+    "molarity": {
+        "topic": "Molarity",
+        "formula": "M = n / V",
+
+        "steps": [
+            "Calculate the molar mass of the solute.",
+            "Calculate the number of moles using n = given mass / molar mass.",
+            "Convert the volume of solution into litres.",
+            "Apply M = n / V to calculate molarity."
+        ],
+
+        "hints": [
+            "What quantity do you need before calculating the number of moles?",
+            "You need the molar mass of the solute.",
+            "Which formula relates mass, molar mass and number of moles?",
+            "Use n = given mass / molar mass.",
+            "Is the volume given in litres or millilitres?",
+            "Convert mL into L before using the molarity formula.",
+            "Which formula connects moles and volume with molarity?",
+            "Use M = n / V."
+        ]
+    }
+}
+
+
+@app.route("/")
 def home():
-    return jsonify({
-        "app": "BikkyChem",
-        "status": "live",
-        "message": "BikkyChem AI backend is running successfully"
-    })
+    return """
+    <html>
+    <head>
+        <title>BikkyChem</title>
+    </head>
 
-# ---------------------------------------------------
-# Test Route
-# ---------------------------------------------------
-@app.route('/test')
-def test():
-    try:
-        question = "Calculate the volume occupied by 0.5 mol of an ideal gas at STP."
+    <body>
 
-        response = model.generate_content(question)
+        <h1>🧪 BikkyChem</h1>
 
-        return jsonify({
-            "status": "success",
-            "question": question,
-            "response": response.text
-        })
+        <h2>Guided Chemistry Learning</h2>
 
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
+        <p>Prototype Version 1</p>
 
-# ---------------------------------------------------
-# Main Solve API
-# ---------------------------------------------------
-@app.route('/solve', methods=['POST'])
-def solve():
-    try:
-        data = request.get_json()
+        <hr>
 
-        if not data or "question" not in data:
-            return jsonify({
-                "status": "error",
-                "message": "Please provide a question in JSON format."
-            }), 400
+        <h3>Ask a Chemistry Question</h3>
 
-        question = data["question"].strip()
+        <form action="/ask" method="post">
 
-        if not question:
-            return jsonify({
-                "status": "error",
-                "message": "Question cannot be empty."
-            }), 400
+            <textarea
+                name="question"
+                rows="6"
+                cols="60"
+                placeholder="Type your Chemistry question here..."
+            ></textarea>
 
-        response = model.generate_content(question)
+            <br><br>
 
-        return jsonify({
-            "status": "success",
-            "question": question,
-            "response": response.text
-        })
+            <button type="submit">
+                ASK BIKKYCHEM
+            </button>
 
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
+        </form>
 
-# ---------------------------------------------------
-# Run the server
-# ---------------------------------------------------
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    </body>
+    </html>
+    """
+
+
+@app.route("/ask", methods=["POST"])
+def ask():
+
+    question = request.form.get("question", "").lower()
+
+    # -----------------------------------------
+    # Simple topic identification
+    # -----------------------------------------
+
+    if "molarity" in question:
+
+        data = chemistry_data["molarity"]
+
+        return f"""
+        <html>
+        <head>
+            <title>BikkyChem - Guided Learning</title>
+        </head>
+
+        <body>
+
+            <h1>🧪 BikkyChem</h1>
+
+            <hr>
+
+            <h3>Topic Identified</h3>
+
+            <p><strong>{data["topic"]}</strong></p>
+
+            <h3>Formula</h3>
+
+            <p><strong>{data["formula"]}</strong></p>
+
+            <h3>Step 1</h3>
+
+            <p>{data["steps"][0]}</p>
+
+            <h3>Hint</h3>
+
+            <p>{data["hints"][0]}</p>
+
+            <hr>
+
+            <p>
+            <strong>
+            BikkyChem does not give the final answer immediately.
+            It guides you step by step.
+            </strong>
+            </p>
+
+            <br>
+
+            <a href="/">← Ask another question</a>
+
+        </body>
+        </html>
+        """
+
+    else:
+
+        return """
+        <html>
+
+        <head>
+            <title>BikkyChem</title>
+        </head>
+
+        <body>
+
+            <h1>🧪 BikkyChem</h1>
+
+            <h3>Topic not identified</h3>
+
+            <p>
+            This prototype currently understands
+            questions related to <strong>Molarity</strong>.
+            </p>
+
+            <a href="/">← Try again</a>
+
+        </body>
+
+        </html>
+        """
+
+
+if __name__ == "__main__":
+    app.run()
+    
