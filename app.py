@@ -6,6 +6,7 @@ import urllib.error
 
 app = Flask(__name__, template_folder="Templates")
 
+
 # ============================================================
 # OPENROUTER CONFIGURATION
 # ============================================================
@@ -25,17 +26,98 @@ def home():
 
 
 # ============================================================
-# OPENROUTER TEST
+# OPENROUTER AI FUNCTION
 # ============================================================
 
-@app.route("/test-ai")
-def test_ai():
+def ask_openrouter(question):
 
     if not OPENROUTER_API_KEY:
-        return jsonify({
-            "status": "error",
-            "message": "OPENROUTER_API_KEY is not configured in Render."
-        }), 500
+        raise Exception(
+            "OPENROUTER_API_KEY is not configured in Render."
+        )
+
+    system_prompt = """
+You are BikkyChem, an educational Chemistry guidance engine.
+
+Your purpose is NOT to act like an ordinary chatbot.
+
+You must help the student LEARN how to solve the Chemistry problem.
+
+For every Chemistry question:
+
+1. Identify the exact Chemistry topic.
+2. Identify the relevant concept.
+3. Provide the appropriate formula or chemical equation when applicable.
+4. Identify the quantities/data required.
+5. Give logical step-by-step guidance.
+6. Give progressive hints that help the student think.
+7. Give feedback explaining what the student should check.
+8. Do NOT directly provide the final numerical answer to a numerical problem.
+9. Do NOT perform the complete calculation for the student.
+10. Do not invent a formula.
+11. If several formulas are possible, select the most appropriate one and explain why.
+12. If the question is conceptual and no formula is required, clearly state that.
+13. If the question is incomplete, identify the missing information.
+14. Keep the explanation suitable for CBSE Class XI-XII Chemistry students.
+15. Use scientifically correct Chemistry terminology.
+16. Do not assume that every question is about Molarity.
+
+IMPORTANT:
+Return ONLY valid JSON.
+
+Use exactly this structure:
+
+{
+  "topic": "Exact Chemistry topic",
+  "concept": "Main concept involved",
+  "formula": "Relevant formula or chemical equation",
+  "given": [
+    "Important quantity/data given in the question"
+  ],
+  "required": [
+    "Quantity or result the student needs to determine"
+  ],
+  "steps": [
+    "Step 1 guidance",
+    "Step 2 guidance",
+    "Step 3 guidance"
+  ],
+  "hints": [
+    "Progressive hint 1",
+    "Progressive hint 2",
+    "Progressive hint 3",
+    "Progressive hint 4"
+  ],
+  "feedback": [
+    "Important thing the student should check",
+    "Common mistake to avoid"
+  ],
+  "final_answer": ""
+}
+
+The "final_answer" field MUST remain empty.
+
+For numerical problems, never put the final numerical result in any field.
+
+For conceptual questions, explain the concept through the steps and hints rather than giving an unnecessarily long answer.
+"""
+
+    payload = {
+        "model": "openrouter/free",
+        "messages": [
+            {
+                "role": "system",
+                "content": system_prompt
+            },
+            {
+                "role": "user",
+                "content": question
+            }
+        ],
+        "temperature": 0.2
+    }
+
+    data = json.dumps(payload).encode("utf-8")
 
     headers = {
         "Authorization": "Bearer " + OPENROUTER_API_KEY,
@@ -44,52 +126,105 @@ def test_ai():
         "X-Title": "BikkyChem"
     }
 
-    payload = {
-        "model": "openrouter/free",
-        "messages": [
-            {
-                "role": "user",
-                "content": "Reply with exactly: OpenRouter connection successful."
-            }
-        ]
-    }
+    req = urllib.request.Request(
+        OPENROUTER_URL,
+        data=data,
+        headers=headers,
+        method="POST"
+    )
 
     try:
 
-        data = json.dumps(payload).encode("utf-8")
-
-        req = urllib.request.Request(
-            OPENROUTER_URL,
-            data=data,
-            headers=headers,
-            method="POST"
-        )
-
-        with urllib.request.urlopen(req, timeout=60) as response:
+        with urllib.request.urlopen(req, timeout=90) as response:
 
             response_data = response.read().decode("utf-8")
-            result = json.loads(response_data)
 
-        answer = (
-            result.get("choices", [{}])[0]
+        result = json.loads(response_data)
+
+        content = (
+            result
+            .get("choices", [{}])[0]
             .get("message", {})
             .get("content", "")
         )
 
-        return jsonify({
-            "status": "success",
-            "message": answer
-        })
+        if not content:
+            raise Exception(
+                "OpenRouter returned an empty response."
+            )
+
+        # ----------------------------------------------------
+        # Remove possible Markdown code fences
+        # ----------------------------------------------------
+
+        content = content.strip()
+
+        if content.startswith("```json"):
+            content = content[7:]
+
+        elif content.startswith("```"):
+            content = content[3:]
+
+        if content.endswith("```"):
+            content = content[:-3]
+
+        content = content.strip()
+
+        # ----------------------------------------------------
+        # Convert AI JSON into Python dictionary
+        # ----------------------------------------------------
+
+        return json.loads(content)
 
     except urllib.error.HTTPError as e:
 
-        error_body = e.read().decode("utf-8", errors="replace")
+        error_body = e.read().decode(
+            "utf-8",
+            errors="replace"
+        )
+
+        raise Exception(
+            f"OpenRouter HTTP {e.code}: {error_body}"
+        )
+
+    except urllib.error.URLError as e:
+
+        raise Exception(
+            f"Unable to connect to OpenRouter: {e.reason}"
+        )
+
+    except json.JSONDecodeError:
+
+        raise Exception(
+            "OpenRouter returned an invalid JSON response."
+        )
+
+
+# ============================================================
+# TEST AI CONNECTION
+# ============================================================
+
+@app.route("/test-ai")
+def test_ai():
+
+    if not OPENROUTER_API_KEY:
 
         return jsonify({
             "status": "error",
-            "openrouter_status": e.code,
-            "message": error_body
+            "message": "OPENROUTER_API_KEY is not configured in Render."
         }), 500
+
+    try:
+
+        result = ask_openrouter(
+            "What is molarity? Give only the topic, formula and one learning hint."
+        )
+
+        return jsonify({
+            "status": "success",
+            "message": "OpenRouter connection successful.",
+            "ai_response": result
+        })
 
     except Exception as e:
 
@@ -100,7 +235,7 @@ def test_ai():
 
 
 # ============================================================
-# ASK ROUTE
+# MAIN ASK ROUTE
 # ============================================================
 
 @app.route("/ask", methods=["POST"])
@@ -111,91 +246,138 @@ def ask():
     if not data:
 
         return jsonify({
-            "topic": "No question received",
-            "formula": "",
-            "steps": [],
-            "hints": [
-                "Please enter a Chemistry question."
-            ]
-        })
+            "status": "error",
+            "message": "No question received."
+        }), 400
+
 
     question = str(
         data.get("question", "")
-    ).lower().strip()
+    ).strip()
 
 
-    # --------------------------------------------------------
-    # Temporary Molarity detection
-    # --------------------------------------------------------
+    if not question:
 
-    molarity_keywords = [
-        "molarity",
-        "molar",
-        "moles",
-        "mol",
-        "concentration"
-    ]
+        return jsonify({
+            "status": "error",
+            "message": "Please enter a Chemistry question."
+        }), 400
 
-    if any(word in question for word in molarity_keywords):
+
+    try:
+
+        ai_result = ask_openrouter(question)
+
+
+        # ----------------------------------------------------
+        # Ensure expected fields exist
+        # ----------------------------------------------------
+
+        topic = ai_result.get(
+            "topic",
+            "Topic not identified"
+        )
+
+        concept = ai_result.get(
+            "concept",
+            ""
+        )
+
+        formula = ai_result.get(
+            "formula",
+            "No formula required."
+        )
+
+        given = ai_result.get(
+            "given",
+            []
+        )
+
+        required = ai_result.get(
+            "required",
+            []
+        )
+
+        steps = ai_result.get(
+            "steps",
+            []
+        )
+
+        hints = ai_result.get(
+            "hints",
+            []
+        )
+
+        feedback = ai_result.get(
+            "feedback",
+            []
+        )
+
+
+        # ----------------------------------------------------
+        # Send structured result to frontend
+        # ----------------------------------------------------
 
         return jsonify({
 
-            "topic": "Molarity",
+            "status": "success",
 
-            "formula": "M = n / V",
+            "topic": topic,
 
-            "steps": [
-                "Calculate the molar mass of the solute.",
-                "Calculate the number of moles using n = given mass / molar mass.",
-                "Convert the volume of solution into litres.",
-                "Apply M = n / V to calculate molarity."
-            ],
+            "concept": concept,
 
-            "hints": [
-                "What quantity do you need before calculating the number of moles?",
-                "You need the molar mass of the solute.",
-                "Which formula relates mass, molar mass and number of moles?",
-                "Use n = given mass / molar mass.",
-                "Is the volume given in litres or millilitres?",
-                "Convert mL into L before using the molarity formula.",
-                "Which formula connects moles and volume with molarity?",
-                "Use M = n / V."
-            ]
+            "formula": formula,
+
+            "given": given,
+
+            "required": required,
+
+            "steps": steps,
+
+            "hints": hints,
+
+            "feedback": feedback,
+
+            # Intentionally empty.
+            # BikkyChem should guide rather than solve.
+            "final_answer": ""
+
         })
 
 
-    # --------------------------------------------------------
-    # Topic not yet available
-    # --------------------------------------------------------
+    except Exception as e:
 
-    return jsonify({
+        return jsonify({
 
-        "topic": "Topic not yet available",
+            "status": "error",
 
-        "formula": "The formula will be provided after identifying the topic.",
+            "topic": "AI connection problem",
 
-        "steps": [
-            "Identify the Chemistry topic involved in the question.",
-            "Recall the relevant concept.",
-            "Select the appropriate formula.",
-            "Proceed step by step."
-        ],
+            "formula": "",
 
-        "hints": [
-            "Which Chemistry chapter does your question belong to?",
-            "Identify the quantity that is being asked.",
-            "Recall the definition of the relevant concept."
-        ]
-    })
+            "steps": [],
+
+            "hints": [
+                "The Chemistry AI could not process the question.",
+                "Please try again."
+            ],
+
+            "feedback": [
+                str(e)
+            ]
+
+        }), 500
 
 
 # ============================================================
-# START APPLICATION
+# RUN APPLICATION
 # ============================================================
 
 if __name__ == "__main__":
 
-    port = int(os.environ.get("PORT", 5000))
+    port = int(
+        os.environ.get("PORT", 5000)
+    )
 
     app.run(
         host="0.0.0.0",
