@@ -43,7 +43,7 @@ def home():
     </head>
 
     <body>
-    <img src="{{ url_for('static', filename='IMG_0829.jpeg') }}"
+    <img src="{{ url_for('static', filename='IMG_0898.png') }}"
      alt="BikkyChem Logo"
      style="width:120px; display:block; margin:0 auto 15px;">
 
