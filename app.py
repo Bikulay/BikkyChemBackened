@@ -1,6 +1,6 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, jsonify, render_template
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="Templates")
 
 
 # ============================================================
@@ -44,300 +44,7 @@ chemistry_data = {
 
 @app.route("/")
 def home():
-
-    return """
-<!DOCTYPE html>
-
-<html>
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
-    <title>BikkyChem</title>
-
-    <style>
-
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f7f9fc;
-            color: #222;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 30px 20px;
-        }
-
-        .header {
-            text-align: center;
-            background: white;
-            padding: 30px 20px;
-            border-radius: 15px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-        }
-
-        .logo {
-            width: 140px;
-            height: auto;
-            display: block;
-            margin: 0 auto 15px auto;
-        }
-
-        h1 {
-            margin: 5px 0;
-            font-size: 34px;
-        }
-
-        .tagline {
-            font-size: 18px;
-            color: #555;
-            margin-top: 8px;
-        }
-
-        .version {
-            color: #777;
-            font-size: 14px;
-        }
-
-        .question-box {
-            background: white;
-            margin-top: 25px;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-        }
-
-        textarea {
-            width: 100%;
-            min-height: 130px;
-            padding: 15px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            font-size: 16px;
-            resize: vertical;
-        }
-
-        button {
-            margin-top: 15px;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            background: #2878e8;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #185fc0;
-        }
-
-        #result {
-            margin-top: 25px;
-            padding: 20px;
-            background: #f1f6ff;
-            border-radius: 10px;
-            display: none;
-        }
-
-        .section {
-            margin-top: 15px;
-        }
-
-        .section h3 {
-            margin-bottom: 8px;
-        }
-
-        ul {
-            line-height: 1.8;
-        }
-
-    </style>
-
-</head>
-
-
-<body>
-
-<div class="container">
-
-    <div class="header">
-
-        <!-- BIKKYCHEM LOGO -->
-        <img
-            src="{{ url_for('static', filename='IMG_0898.png') }}"
-            alt="BikkyChem Logo"
-            class="logo"
-        >
-
-        <h1>BikkyChem</h1>
-
-        <div class="tagline">
-            Guided Chemistry Learning
-        </div>
-
-        <div class="version">
-            Prototype Version 1
-        </div>
-
-    </div>
-
-
-    <div class="question-box">
-
-        <h2>Ask a Chemistry Question</h2>
-
-        <textarea
-            id="question"
-            placeholder="Type your Chemistry question here..."
-        ></textarea>
-
-        <br>
-
-        <button onclick="askBikkyChem()">
-            ASK BIKKYCHEM
-        </button>
-
-
-        <div id="result">
-
-            <div class="section">
-
-                <h3>Topic</h3>
-
-                <p id="topic"></p>
-
-            </div>
-
-
-            <div class="section">
-
-                <h3>Formula</h3>
-
-                <p id="formula"></p>
-
-            </div>
-
-
-            <div class="section">
-
-                <h3>Guided Steps</h3>
-
-                <ul id="steps"></ul>
-
-            </div>
-
-
-            <div class="section">
-
-                <h3>Hints</h3>
-
-                <ul id="hints"></ul>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-<script>
-
-async function askBikkyChem() {
-
-    const question =
-        document.getElementById("question").value;
-
-    if (!question.trim()) {
-
-        alert("Please enter a Chemistry question.");
-
-        return;
-    }
-
-
-    const response = await fetch("/ask", {
-
-        method: "POST",
-
-        headers: {
-            "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-            question: question
-        })
-
-    });
-
-
-    const data = await response.json();
-
-
-    document.getElementById("result").style.display = "block";
-
-
-    document.getElementById("topic").innerText =
-        data.topic;
-
-
-    document.getElementById("formula").innerText =
-        data.formula;
-
-
-    const stepsList =
-        document.getElementById("steps");
-
-    stepsList.innerHTML = "";
-
-
-    data.steps.forEach(function(step) {
-
-        const li = document.createElement("li");
-
-        li.innerText = step;
-
-        stepsList.appendChild(li);
-
-    });
-
-
-    const hintsList =
-        document.getElementById("hints");
-
-    hintsList.innerHTML = "";
-
-
-    data.hints.forEach(function(hint) {
-
-        const li = document.createElement("li");
-
-        li.innerText = hint;
-
-        hintsList.appendChild(li);
-
-    });
-
-}
-
-
-</script>
-
-
-</body>
-
-</html>
-"""
+    return render_template("Index.html")
 
 
 # ============================================================
@@ -347,7 +54,18 @@ async function askBikkyChem() {
 @app.route("/ask", methods=["POST"])
 def ask():
 
-    data = request.get_json()
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "topic": "No question received",
+            "formula": "",
+            "steps": [],
+            "hints": [
+                "Please enter a Chemistry question."
+            ]
+        })
+
 
     question = data.get("question", "").lower().strip()
 
@@ -369,7 +87,6 @@ def ask():
 
         topic_data = chemistry_data["molarity"]
 
-
         return jsonify({
 
             "topic": topic_data["topic"],
@@ -384,7 +101,7 @@ def ask():
 
 
     # --------------------------------------------------------
-    # If topic is not yet available
+    # Topic not yet available
     # --------------------------------------------------------
 
     return jsonify({
