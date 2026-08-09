@@ -1,39 +1,182 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>BikkyChem</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f7f9fc;
+            color: #222;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 25px 10px;
+        }
+
+        .logo {
+            width: 140px;
+            height: auto;
+            display: block;
+            margin: 0 auto 15px auto;
+        }
+
+        h1 {
+            margin: 5px 0;
+            font-size: 36px;
+        }
+
+        .tagline {
+            font-size: 20px;
+            color: #555;
+            margin-top: 8px;
+        }
+
+        .version {
+            color: #777;
+            margin-top: 8px;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #ccc;
+            margin: 25px 0;
+        }
+
+        .question-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        .button {
+            margin-top: 15px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 7px;
+            background: #4285f4;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: #3367d6;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #777;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .tagline {
+                font-size: 17px;
+            }
+
+            .question-section {
+                padding: 18px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-<img src="{{ url_for('static', filename='IMG_0898.png') }}"
-     alt="BikkyChem Logo"
-     style="width:120px; display:block; margin:0 auto 15px;">
-    <h1>🧪 BikkyChem</h1>
 
-    <h2>Guided Chemistry Learning</h2>
+<div class="container">
 
-    <p>Prototype Version 1</p>
+    <div class="header">
+
+        <img
+            src="{{ url_for('static', filename='IMG_0898.png') }}"
+            alt="BikkyChem Logo"
+            class="logo"
+        >
+
+        <h1>BikkyChem</h1>
+
+        <div class="tagline">
+            Guided Chemistry Learning
+        </div>
+
+        <div class="version">
+            Prototype Version 1
+        </div>
+
+    </div>
 
     <hr>
 
-    <h3>Ask a Chemistry Question</h3>
+    <div class="question-section">
 
-    <form action="/ask" method="post">
+        <h2>Ask a Chemistry Question</h2>
 
-        <textarea
-            name="question"
-            rows="6"
-            cols="60"
-            placeholder="Type your Chemistry question here..."
-        ></textarea>
+        <form action="/ask" method="POST">
 
-        <br><br>
+            <textarea
+                name="question"
+                placeholder="Type your Chemistry question here..."
+                required
+            ></textarea>
 
-        <button type="submit">
-            ASK BIKKYCHEM
-        </button>
+            <br>
 
-    </form>
+            <button type="submit" class="button">
+                ASK BIKKYCHEM
+            </button>
+
+        </form>
+
+    </div>
+
+    <div class="footer">
+        © 2026 BikkyChem — Guided Chemistry Learning
+    </div>
+
+</div>
 
 </body>
 </html>
