@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport"
@@ -8,265 +10,542 @@
 
     <title>BikkyChem AI</title>
 
+
     <style>
+
         * {
             box-sizing: border-box;
         }
 
+
         body {
+
             margin: 0;
             padding: 0;
-            font-family: Arial, Helvetica, sans-serif;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
             background: #f4f7fb;
+
             color: #1f2937;
         }
 
+
+        /* =====================================================
+           HEADER
+           ===================================================== */
+
         .header {
-            background: linear-gradient(135deg, #0f4c81, #1976d2);
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #0f4c81,
+                    #1976d2
+                );
+
             color: white;
+
             text-align: center;
+
             padding: 25px 15px;
         }
 
+
         .logo {
+
             width: 110px;
             height: 110px;
+
             object-fit: contain;
+
             border-radius: 50%;
+
             background: white;
+
             padding: 5px;
+
             margin-bottom: 10px;
         }
 
+
         .header h1 {
+
             margin: 5px 0;
+
             font-size: 32px;
         }
 
+
         .header p {
+
             margin: 5px 0;
+
             font-size: 16px;
         }
 
+
+        /* =====================================================
+           MAIN CONTAINER
+           ===================================================== */
+
         .container {
+
             width: 92%;
+
             max-width: 900px;
+
             margin: 30px auto;
         }
 
+
         .question-section {
+
             background: white;
+
             padding: 25px;
+
             border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.10);
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,0.10);
         }
 
+
         .question-section h2 {
+
             text-align: center;
+
             color: #0f4c81;
+
             margin-top: 0;
         }
 
+
+        /* =====================================================
+           QUESTION BOX
+           ===================================================== */
+
         textarea {
+
             width: 100%;
+
             min-height: 150px;
+
             padding: 15px;
-            border: 1px solid #cbd5e1;
+
+            border:
+                1px solid
+                #cbd5e1;
+
             border-radius: 10px;
+
             resize: vertical;
+
             font-size: 16px;
-            font-family: Arial, Helvetica, sans-serif;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
             outline: none;
         }
 
+
         textarea:focus {
+
             border-color: #1976d2;
-            box-shadow: 0 0 0 2px rgba(25,118,210,0.12);
+
+            box-shadow:
+                0 0 0 2px
+                rgba(25,118,210,0.12);
         }
 
+
+        /* =====================================================
+           BUTTON
+           ===================================================== */
+
         .button {
+
             display: block;
+
             width: 100%;
+
             margin-top: 15px;
+
             padding: 14px;
+
             background: #0f4c81;
+
             color: white;
+
             border: none;
+
             border-radius: 10px;
+
             font-size: 17px;
+
             font-weight: bold;
+
             cursor: pointer;
         }
 
+
         .button:hover {
+
             background: #083b63;
         }
 
+
         .button:disabled {
+
             background: #9ca3af;
+
             cursor: not-allowed;
         }
 
+
+        /* =====================================================
+           LOADING
+           ===================================================== */
+
         #loading {
+
             display: none;
+
             text-align: center;
+
             margin-top: 20px;
+
             color: #0f4c81;
+
             font-weight: bold;
         }
 
-        #result {
+
+        /* =====================================================
+           ERROR
+           ===================================================== */
+
+        #error {
+
             display: none;
+
+            margin-top: 20px;
+
+            padding: 15px;
+
+            background: #fee2e2;
+
+            color: #991b1b;
+
+            border-radius: 8px;
+
+            line-height: 1.5;
+
+            word-break: break-word;
+        }
+
+
+        /* =====================================================
+           RESULT
+           ===================================================== */
+
+        #result {
+
+            display: none;
+
             margin-top: 25px;
+
             padding: 20px;
+
             background: #f8fafc;
-            border-left: 5px solid #1976d2;
+
+            border-left:
+                5px solid
+                #1976d2;
+
             border-radius: 10px;
         }
 
+
         #result h3 {
+
             color: #0f4c81;
+
+            margin-top: 18px;
+
             margin-bottom: 7px;
         }
 
-        #result p {
+
+        #result h3:first-child {
+
             margin-top: 0;
+        }
+
+
+        #result p {
+
+            margin-top: 0;
+
             line-height: 1.6;
         }
 
+
         #steps,
-        #hints {
+        #hints,
+        #given,
+        #required,
+        #feedback {
+
             padding-left: 25px;
+
             line-height: 1.7;
         }
 
-        #error {
-            display: none;
-            margin-top: 20px;
-            padding: 15px;
-            background: #fee2e2;
-            color: #991b1b;
-            border-radius: 8px;
-        }
+
+        /* =====================================================
+           FOOTER
+           ===================================================== */
 
         .footer {
+
             text-align: center;
+
             padding: 25px 15px;
+
             margin-top: 40px;
+
             background: #0f4c81;
+
             color: white;
+
             font-size: 14px;
         }
+
+
+        /* =====================================================
+           MOBILE
+           ===================================================== */
 
         @media (max-width: 600px) {
 
             .header h1 {
+
                 font-size: 26px;
             }
 
+
             .header p {
+
                 font-size: 14px;
             }
 
+
             .container {
+
                 width: 95%;
+
                 margin: 20px auto;
             }
 
+
             .question-section {
+
                 padding: 18px;
             }
 
+
             textarea {
+
                 min-height: 130px;
             }
+
         }
+
     </style>
+
 </head>
+
 
 <body>
 
-    <!-- HEADER -->
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
     <header class="header">
 
-        <!--
-            IMPORTANT:
-            Keep your actual logo filename here.
 
-            If your logo is inside:
-            static/images/logo.png
+        <img
+            src="{{ url_for('static', filename='IMG_0898.png') }}"
+            alt="BikkyChem Logo"
+            class="logo"
+        >
 
-            then use:
-            /static/images/logo.png
-        -->
-
-      <img src="{{ url_for('static', filename='IMG_0898.png') }}"
-     alt="BikkyChem Logo"
-     class="logo">
 
         <h1>BikkyChem AI</h1>
+
 
         <p>
             Learn Chemistry through Topics, Formulas, Steps and Hints
         </p>
 
+
     </header>
 
 
-    <!-- MAIN CONTENT -->
+
+    <!-- =====================================================
+         MAIN CONTENT
+         ===================================================== -->
+
     <main class="container">
+
 
         <div class="question-section">
 
-            <h2>Ask a Chemistry Question</h2>
+
+            <h2>
+                Ask a Chemistry Question
+            </h2>
+
+
+            <!-- QUESTION -->
 
             <textarea
                 id="question"
                 placeholder="Type your Chemistry question here..."
             ></textarea>
 
+
+            <!-- BUTTON -->
+
             <button
                 type="button"
                 class="button"
                 id="askButton"
-                onclick="askBikkyChem()">
+                onclick="askBikkyChem()"
+            >
                 ASK BIKKYCHEM
             </button>
 
 
-            <!-- LOADING MESSAGE -->
+            <!-- LOADING -->
+
             <div id="loading">
+
                 BikkyChem is analysing your question...
+
             </div>
 
 
-            <!-- ERROR MESSAGE -->
+            <!-- ERROR -->
+
             <div id="error"></div>
 
 
-            <!-- RESULT -->
+            <!-- =================================================
+                 AI RESULT
+                 ================================================= -->
+
             <div id="result">
 
-                <h3>Topic</h3>
+
+                <!-- TOPIC -->
+
+                <h3>
+                    Topic
+                </h3>
+
                 <p id="topic"></p>
 
-                <h3>Formula</h3>
+
+                <!-- CONCEPT -->
+
+                <h3>
+                    Concept
+                </h3>
+
+                <p id="concept"></p>
+
+
+                <!-- FORMULA -->
+
+                <h3>
+                    Formula / Equation
+                </h3>
+
                 <p id="formula"></p>
 
-                <h3>Guided Steps</h3>
+
+                <!-- GIVEN -->
+
+                <h3>
+                    Given
+                </h3>
+
+                <ul id="given"></ul>
+
+
+                <!-- REQUIRED -->
+
+                <h3>
+                    Required
+                </h3>
+
+                <ul id="required"></ul>
+
+
+                <!-- GUIDED STEPS -->
+
+                <h3>
+                    Guided Steps
+                </h3>
+
                 <ul id="steps"></ul>
 
-                <h3>Hints</h3>
+
+                <!-- HINTS -->
+
+                <h3>
+                    Hints
+                </h3>
+
                 <ul id="hints"></ul>
+
+
+                <!-- FEEDBACK -->
+
+                <h3>
+                    Feedback
+                </h3>
+
+                <ul id="feedback"></ul>
+
 
             </div>
 
+
         </div>
+
 
     </main>
 
 
-    <!-- FOOTER -->
+
+    <!-- =====================================================
+         FOOTER
+         ===================================================== -->
+
     <footer class="footer">
 
         <p>
@@ -280,217 +559,412 @@
     </footer>
 
 
-    <!-- JAVASCRIPT -->
+
+    <!-- =====================================================
+         JAVASCRIPT
+         ===================================================== -->
+
     <script>
 
-        async function askBikkyChem() {
 
-            const question =
-                document.getElementById("question").value.trim();
+        /* =====================================================
+           SAFELY DISPLAY LIST DATA
+           ===================================================== */
 
-            const result =
-                document.getElementById("result");
-
-            const loading =
-                document.getElementById("loading");
-
-            const errorBox =
-                document.getElementById("error");
-
-            const askButton =
-                document.getElementById("askButton");
+        function displayList(elementId, items) {
 
 
-            /*
-             * Check whether the user entered a question.
-             */
+            const element =
+                document.getElementById(elementId);
 
-            if (!question) {
 
-                errorBox.textContent =
-                    "Please enter a Chemistry question.";
+            element.innerHTML = "";
 
-                errorBox.style.display = "block";
-                result.style.display = "none";
+
+            if (!Array.isArray(items)) {
 
                 return;
             }
 
 
-            /*
-             * Clear previous result/error.
-             */
+            items.forEach(function(item) {
 
-            errorBox.style.display = "none";
-            result.style.display = "none";
 
-            loading.style.display = "block";
-            askButton.disabled = true;
+                const li =
+                    document.createElement("li");
+
+
+                li.textContent =
+                    String(item);
+
+
+                element.appendChild(li);
+
+
+            });
+
+        }
+
+
+
+        /* =====================================================
+           ASK BIKKYCHEM
+           ===================================================== */
+
+        async function askBikkyChem() {
+
+
+            const question =
+                document
+                    .getElementById("question")
+                    .value
+                    .trim();
+
+
+            const result =
+                document.getElementById("result");
+
+
+            const loading =
+                document.getElementById("loading");
+
+
+            const errorBox =
+                document.getElementById("error");
+
+
+            const askButton =
+                document.getElementById("askButton");
+
+
+            /* -----------------------------------------------
+               Validate question
+               ----------------------------------------------- */
+
+            if (!question) {
+
+
+                errorBox.textContent =
+                    "Please enter a Chemistry question.";
+
+
+                errorBox.style.display =
+                    "block";
+
+
+                result.style.display =
+                    "none";
+
+
+                return;
+
+            }
+
+
+
+            /* -----------------------------------------------
+               Reset interface
+               ----------------------------------------------- */
+
+            errorBox.style.display =
+                "none";
+
+
+            result.style.display =
+                "none";
+
+
+            loading.style.display =
+                "block";
+
+
+            askButton.disabled =
+                true;
+
 
 
             try {
 
-                /*
-                 * Send the question to Flask.
-                 */
 
-                const response = await fetch("/ask", {
+                /* -------------------------------------------
+                   Send question to Flask
+                   ------------------------------------------- */
 
-                    method: "POST",
+                const response =
+                    await fetch(
+                        "{{ url_for('ask') }}",
+                        {
 
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                            method: "POST",
 
-                    body: JSON.stringify({
-                        question: question
-                    })
+                            headers: {
 
-                });
+                                "Content-Type":
+                                    "application/json",
+
+                                "Accept":
+                                    "application/json"
+
+                            },
+
+                            body:
+                                JSON.stringify({
+                                    question: question
+                                })
+
+                        }
+                    );
 
 
-                /*
-                 * Convert server response to JSON.
-                 */
 
-                const data = await response.json();
+                /* -------------------------------------------
+                   Read response safely
+                   ------------------------------------------- */
+
+                const responseText =
+                    await response.text();
 
 
-                /*
-                 * Check whether Flask returned an error.
-                 */
+                let data;
 
-                if (!response.ok || data.error) {
+
+                try {
+
+                    data =
+                        JSON.parse(responseText);
+
+                }
+
+                catch (jsonError) {
 
                     throw new Error(
-                        data.error ||
-                        "Unable to process the question."
+                        "The server returned an invalid response."
                     );
 
                 }
 
 
-                /*
-                 * Display Topic.
-                 */
 
-                document.getElementById("topic").textContent =
-                    data.topic || "Not available";
+                /* -------------------------------------------
+                   Server error
+                   ------------------------------------------- */
 
-
-                /*
-                 * Display Formula.
-                 */
-
-                document.getElementById("formula").textContent =
-                    data.formula || "No formula required";
+                if (
+                    !response.ok ||
+                    data.status === "error"
+                ) {
 
 
-                /*
-                 * Display Guided Steps.
-                 */
-
-                const steps =
-                    document.getElementById("steps");
-
-                steps.innerHTML = "";
+                    let message =
+                        data.message ||
+                        "Unable to process the question.";
 
 
-                if (Array.isArray(data.steps)) {
+                    if (
+                        data.feedback &&
+                        Array.isArray(data.feedback) &&
+                        data.feedback.length > 0
+                    ) {
 
-                    data.steps.forEach(function(step) {
+                        message +=
+                            " " +
+                            data.feedback.join(" ");
 
-                        const li =
-                            document.createElement("li");
+                    }
 
-                        li.textContent = step;
 
-                        steps.appendChild(li);
-
-                    });
+                    throw new Error(message);
 
                 }
 
 
-                /*
-                 * Display Hints.
-                 */
 
-                const hints =
-                    document.getElementById("hints");
+                /* -------------------------------------------
+                   TOPIC
+                   ------------------------------------------- */
 
-                hints.innerHTML = "";
+                document
+                    .getElementById("topic")
+                    .textContent =
+                        data.topic ||
+                        "Not identified";
 
 
-                if (Array.isArray(data.hints)) {
 
-                    data.hints.forEach(function(hint) {
+                /* -------------------------------------------
+                   CONCEPT
+                   ------------------------------------------- */
 
-                        const li =
-                            document.createElement("li");
+                document
+                    .getElementById("concept")
+                    .textContent =
+                        data.concept ||
+                        "Concept not available";
 
-                        li.textContent = hint;
 
-                        hints.appendChild(li);
 
+                /* -------------------------------------------
+                   FORMULA
+                   ------------------------------------------- */
+
+                document
+                    .getElementById("formula")
+                    .textContent =
+                        data.formula ||
+                        "No formula required";
+
+
+
+                /* -------------------------------------------
+                   GIVEN
+                   ------------------------------------------- */
+
+                displayList(
+                    "given",
+                    data.given
+                );
+
+
+
+                /* -------------------------------------------
+                   REQUIRED
+                   ------------------------------------------- */
+
+                displayList(
+                    "required",
+                    data.required
+                );
+
+
+
+                /* -------------------------------------------
+                   STEPS
+                   ------------------------------------------- */
+
+                displayList(
+                    "steps",
+                    data.steps
+                );
+
+
+
+                /* -------------------------------------------
+                   HINTS
+                   ------------------------------------------- */
+
+                displayList(
+                    "hints",
+                    data.hints
+                );
+
+
+
+                /* -------------------------------------------
+                   FEEDBACK
+                   ------------------------------------------- */
+
+                displayList(
+                    "feedback",
+                    data.feedback
+                );
+
+
+
+                /* -------------------------------------------
+                   SHOW RESULT
+                   ------------------------------------------- */
+
+                result.style.display =
+                    "block";
+
+
+                /* Scroll gently to result */
+
+                setTimeout(function() {
+
+                    result.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
                     });
 
-                }
+                }, 100);
 
-
-                /*
-                 * Show result.
-                 */
-
-                result.style.display = "block";
 
             }
 
+
             catch (error) {
 
-                console.error(error);
+
+                console.error(
+                    "BikkyChem Error:",
+                    error
+                );
+
 
                 errorBox.textContent =
                     error.message ||
                     "Something went wrong. Please try again.";
 
-                errorBox.style.display = "block";
+
+                errorBox.style.display =
+                    "block";
+
+
+                result.style.display =
+                    "none";
 
             }
 
+
             finally {
 
-                loading.style.display = "none";
 
-                askButton.disabled = false;
+                loading.style.display =
+                    "none";
+
+
+                askButton.disabled =
+                    false;
 
             }
 
         }
 
 
-        /*
-         * Allow:
-         * Ctrl + Enter / Command + Enter
-         * to submit the question.
-         */
+
+        /* =====================================================
+           CTRL + ENTER / COMMAND + ENTER
+           ===================================================== */
 
         document
             .getElementById("question")
-            .addEventListener("keydown", function(event) {
+            .addEventListener(
+                "keydown",
+                function(event) {
 
-                if (
-                    (event.ctrlKey || event.metaKey) &&
-                    event.key === "Enter"
-                ) {
 
-                    askBikkyChem();
+                    if (
+                        (event.ctrlKey ||
+                         event.metaKey) &&
+                        event.key === "Enter"
+                    ) {
+
+
+                        event.preventDefault();
+
+
+                        askBikkyChem();
+
+                    }
 
                 }
+            );
 
-            });
 
     </script>
 
+
 </body>
+
 </html>
