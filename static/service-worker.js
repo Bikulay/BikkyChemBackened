@@ -1,93 +1,211 @@
-const CACHE_NAME = "bikkychem-v1";
+const CACHE_NAME = "bikkychem-v2";
+
 
 const APP_FILES = [
+
     "/",
+
     "/static/manifest.json",
-    "/static/IMG_0898.png"
+
+    "/static/IMG_0898.png",
+
+    "/static/Icons/Icon-192.png",
+
+    "/static/Icons/Icon-512.png"
+
 ];
 
 
-self.addEventListener("install", function(event) {
 
-    event.waitUntil(
+/* ============================================================
+   INSTALL
+   ============================================================ */
 
-        caches.open(CACHE_NAME)
-            .then(function(cache) {
+self.addEventListener(
+    "install",
+    function(event) {
 
-                return cache.addAll(APP_FILES);
+        event.waitUntil(
 
-            })
+            caches
+                .open(CACHE_NAME)
+                .then(
+                    function(cache) {
 
-    );
+                        return cache.addAll(
+                            APP_FILES
+                        );
 
-});
+                    }
+                )
 
-
-self.addEventListener("activate", function(event) {
-
-    event.waitUntil(
-
-        caches.keys()
-            .then(function(cacheNames) {
-
-                return Promise.all(
-
-                    cacheNames
-                        .filter(function(cacheName) {
-
-                            return (
-                                cacheName !== CACHE_NAME
-                            );
-
-                        })
-
-                        .map(function(cacheName) {
-
-                            return caches.delete(
-                                cacheName
-                            );
-
-                        })
-
-                );
-
-            })
-
-    );
-
-});
+        );
 
 
-self.addEventListener("fetch", function(event) {
+        /*
+         * Activate the new service worker
+         * immediately.
+         */
 
-    /*
-     * Do not intercept API requests.
-     *
-     * Chemistry questions must always
-     * reach the live Flask/OpenRouter backend.
-     */
-
-    if (
-        event.request.url.includes("/ask") ||
-        event.request.url.includes("/test-ai")
-    ) {
-
-        return;
+        self.skipWaiting();
 
     }
+);
 
 
-    event.respondWith(
 
-        fetch(event.request)
-            .catch(function() {
+/* ============================================================
+   ACTIVATE
+   ============================================================ */
 
-                return caches.match(
-                    event.request
-                );
+self.addEventListener(
+    "activate",
+    function(event) {
 
-            })
+        event.waitUntil(
 
-    );
+            caches
+                .keys()
+                .then(
+                    function(cacheNames) {
 
-});
+                        return Promise.all(
+
+                            cacheNames
+                                .filter(
+                                    function(cacheName) {
+
+                                        return (
+                                            cacheName !==
+                                            CACHE_NAME
+                                        );
+
+                                    }
+                                )
+
+                                .map(
+                                    function(cacheName) {
+
+                                        return caches.delete(
+                                            cacheName
+                                        );
+
+                                    }
+                                )
+
+                        );
+
+                    }
+                )
+
+        );
+
+
+        /*
+         * Take control of open pages
+         * immediately.
+         */
+
+        self.clients.claim();
+
+    }
+);
+
+
+
+/* ============================================================
+   FETCH
+   ============================================================ */
+
+self.addEventListener(
+    "fetch",
+    function(event) {
+
+
+        const request =
+            event.request;
+
+
+        const url =
+            new URL(
+                request.url
+            );
+
+
+
+        /* ========================================================
+           DO NOT CACHE POST REQUESTS
+           ======================================================== */
+
+        if (
+            request.method !== "GET"
+        ) {
+
+            return;
+
+        }
+
+
+
+        /* ========================================================
+           DO NOT INTERCEPT CHEMISTRY API REQUESTS
+           ========================================================
+
+           These requests must always reach Flask/OpenRouter.
+        */
+
+        if (
+            url.pathname === "/ask" ||
+            url.pathname === "/test-ai"
+        ) {
+
+            return;
+
+        }
+
+
+
+        /* ========================================================
+           NORMAL GET REQUEST
+           ======================================================== */
+
+        event.respondWith(
+
+            fetch(request)
+
+                .then(
+                    function(response) {
+
+                        /*
+                         * Return the live response.
+                         *
+                         * We do not cache every response,
+                         * because dynamic Flask pages and
+                         * API-related responses should remain
+                         * live.
+                         */
+
+                        return response;
+
+                    }
+                )
+
+                .catch(
+                    function() {
+
+                        /*
+                         * If internet is unavailable,
+                         * try the cached version.
+                         */
+
+                        return caches.match(
+                            request
+                        );
+
+                    }
+                )
+
+        );
+
+    }
+);
