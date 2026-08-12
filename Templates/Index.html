@@ -10,6 +10,40 @@
 
     <title>BikkyChem AI</title>
 
+    <!-- ==================================================
+         PWA / MOBILE APP CONFIGURATION
+         ================================================== -->
+
+    <link
+        rel="manifest"
+        href="{{ url_for('static', filename='manifest.json') }}"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f4c81"
+    >
+
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="default"
+    >
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="BikkyChem"
+    >
+
+    <link
+        rel="apple-touch-icon"
+        href="{{ url_for('static', filename='Icons/Icon-192.png') }}"
+    >
+
 
     <style>
 
@@ -428,8 +462,6 @@
             color: #0f4c81;
 
             font-weight: bold;
-
-            line-height: 1.6;
         }
 
 
@@ -452,8 +484,6 @@
             border-radius: 8px;
 
             line-height: 1.5;
-
-            word-break: break-word;
         }
 
 
@@ -737,7 +767,11 @@
                  LOADING
                  ================================================== -->
 
-            <div id="loading"></div>
+            <div id="loading">
+
+                BikkyChem is analysing your question...
+
+            </div>
 
 
             <!-- ==================================================
@@ -844,34 +878,10 @@
 
 
         /* ==================================================
-           GLOBAL STATE
+           GLOBAL FILE VARIABLE
            ================================================== */
 
         let selectedFile = null;
-
-        let requestInProgress = false;
-
-
-        /*
-         * Maximum number of attempts.
-         *
-         * Attempt 1 = normal request
-         * Attempt 2 = first retry
-         * Attempt 3 = final retry
-         */
-
-        const MAX_ATTEMPTS = 3;
-
-
-        /*
-         * Delay before retries.
-         */
-
-        const RETRY_DELAYS = [
-            0,
-            1500,
-            2500
-        ];
 
 
         /* ==================================================
@@ -974,6 +984,7 @@
             "change",
             function () {
 
+
                 if (
                     !this.files ||
                     this.files.length === 0
@@ -992,20 +1003,6 @@
                     this.files[0];
 
 
-                /*
-                 * New file means a new question.
-                 *
-                 * Clear any old result.
-                 */
-
-                result.style.display =
-                    "none";
-
-
-                errorBox.style.display =
-                    "none";
-
-
                 selectedFileName.textContent =
                     "📄 " +
                     selectedFile.name;
@@ -1019,6 +1016,10 @@
 
                 selectedFileBox.style.display =
                     "block";
+
+
+                errorBox.style.display =
+                    "none";
 
             }
         );
@@ -1054,57 +1055,6 @@
 
             errorBox.style.display =
                 "block";
-        }
-
-
-        /* ==================================================
-           CLEAR OLD RESULT
-           ================================================== */
-
-        function clearResult() {
-
-            result.style.display =
-                "none";
-
-
-            document
-                .getElementById("topic")
-                .textContent = "";
-
-
-            document
-                .getElementById("concept")
-                .textContent = "";
-
-
-            document
-                .getElementById("formula")
-                .textContent = "";
-
-
-            document
-                .getElementById("given")
-                .innerHTML = "";
-
-
-            document
-                .getElementById("required")
-                .innerHTML = "";
-
-
-            document
-                .getElementById("steps")
-                .innerHTML = "";
-
-
-            document
-                .getElementById("hints")
-                .innerHTML = "";
-
-
-            document
-                .getElementById("feedback")
-                .innerHTML = "";
         }
 
 
@@ -1159,527 +1109,10 @@
 
 
         /* ==================================================
-           WAIT FUNCTION
-           ================================================== */
-
-        function wait(milliseconds) {
-
-            return new Promise(
-                function(resolve) {
-
-                    setTimeout(
-                        resolve,
-                        milliseconds
-                    );
-
-                }
-            );
-        }
-
-
-        /* ==================================================
-           DETERMINE WHETHER ERROR IS RETRYABLE
-           ================================================== */
-
-        function isRetryableError(
-            statusCode,
-            errorMessage
-        ) {
-
-            /*
-             * HTTP server-side / temporary errors.
-             */
-
-            if (
-                statusCode === 408 ||
-                statusCode === 425 ||
-                statusCode === 429 ||
-                statusCode === 500 ||
-                statusCode === 502 ||
-                statusCode === 503 ||
-                statusCode === 504
-            ) {
-
-                return true;
-            }
-
-
-            /*
-             * Network / connection errors.
-             */
-
-            const message =
-                String(
-                    errorMessage || ""
-                ).toLowerCase();
-
-
-            if (
-                message.includes(
-                    "failed to fetch"
-                ) ||
-                message.includes(
-                    "network"
-                ) ||
-                message.includes(
-                    "timeout"
-                ) ||
-                message.includes(
-                    "timed out"
-                ) ||
-                message.includes(
-                    "connection"
-                )
-            ) {
-
-                return true;
-            }
-
-
-            /*
-             * Invalid JSON may occur when Render
-             * temporarily returns an HTML error page.
-             *
-             * Treat this as retryable.
-             */
-
-            if (
-                message.includes(
-                    "invalid response"
-                ) ||
-                message.includes(
-                    "invalid json"
-                )
-            ) {
-
-                return true;
-            }
-
-
-            return false;
-        }
-
-
-        /* ==================================================
-           CREATE REQUEST
-           ================================================== */
-
-        function createRequest() {
-
-            /*
-             * IMPORTANT:
-             *
-             * selectedFile is checked at the moment
-             * ASK is pressed.
-             *
-             * Therefore:
-             *
-             * Text question = JSON request
-             *
-             * File question = FormData request
-             *
-             * A previous file cannot accidentally be
-             * reused after the file has been removed.
-             */
-
-            if (selectedFile) {
-
-                const formData =
-                    new FormData();
-
-
-                formData.append(
-                    "file",
-                    selectedFile
-                );
-
-
-                return {
-
-                    options: {
-
-                        method: "POST",
-
-                        body: formData
-
-                    }
-
-                };
-
-            }
-
-
-            /*
-             * Text request.
-             */
-
-            return {
-
-                options: {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type":
-                            "application/json",
-
-                        "Accept":
-                            "application/json"
-
-                    },
-
-                    body:
-                        JSON.stringify({
-
-                            question:
-                                questionBox.value.trim()
-
-                        })
-
-                }
-
-            };
-
-        }
-
-
-        /* ==================================================
-           SEND ONE REQUEST
-           ================================================== */
-
-        async function sendOneRequest() {
-
-            const request =
-                createRequest();
-
-
-            const response =
-                await fetch(
-                    "{{ url_for('ask') }}",
-                    request.options
-                );
-
-
-            /*
-             * Read response as text first.
-             *
-             * This is important because if Render
-             * returns an HTML error page, response.json()
-             * itself would fail and hide the real problem.
-             */
-
-            const responseText =
-                await response.text();
-
-
-            let data = null;
-
-
-            try {
-
-                data =
-                    JSON.parse(
-                        responseText
-                    );
-
-            }
-
-            catch (jsonError) {
-
-                const serverPreview =
-                    responseText
-                        ? responseText
-                            .replace(
-                                /\s+/g,
-                                " "
-                            )
-                            .substring(
-                                0,
-                                300
-                            )
-                        : "Empty response";
-
-
-                const invalidResponseError =
-                    new Error(
-                        "Server returned an invalid response" +
-                        (
-                            response.status
-                                ? " (HTTP " +
-                                  response.status +
-                                  "). "
-                                : ". "
-                        ) +
-                        serverPreview
-                    );
-
-
-                invalidResponseError.statusCode =
-                    response.status;
-
-
-                invalidResponseError.retryable =
-                    true;
-
-
-                throw invalidResponseError;
-            }
-
-
-            /*
-             * Flask/OpenRouter error.
-             */
-
-            if (
-                !response.ok ||
-                data.status === "error"
-            ) {
-
-                const message =
-                    data.message ||
-                    data.error ||
-                    (
-                        "Server returned HTTP " +
-                        response.status
-                    );
-
-
-                const serverError =
-                    new Error(
-                        message
-                    );
-
-
-                serverError.statusCode =
-                    response.status;
-
-
-                serverError.retryable =
-                    isRetryableError(
-                        response.status,
-                        message
-                    );
-
-
-                throw serverError;
-            }
-
-
-            /*
-             * Successful response.
-             */
-
-            return data;
-        }
-
-
-        /* ==================================================
-           REQUEST WITH AUTOMATIC RETRY
-           ================================================== */
-
-        async function requestWithRetry() {
-
-            let lastError = null;
-
-
-            for (
-                let attempt = 1;
-                attempt <= MAX_ATTEMPTS;
-                attempt++
-            ) {
-
-
-                /*
-                 * Wait only before retry attempts.
-                 */
-
-                if (attempt > 1) {
-
-                    const delay =
-                        RETRY_DELAYS[
-                            attempt - 1
-                        ];
-
-
-                    loading.textContent =
-                        "Temporary server problem." +
-                        " Retrying... " +
-                        "Attempt " +
-                        attempt +
-                        " of " +
-                        MAX_ATTEMPTS;
-
-
-                    await wait(
-                        delay
-                    );
-
-                }
-
-
-                try {
-
-                    loading.textContent =
-                        attempt === 1
-                            ? "BikkyChem is analysing your question..."
-                            : "BikkyChem is retrying... Attempt " +
-                              attempt +
-                              " of " +
-                              MAX_ATTEMPTS;
-
-
-                    const data =
-                        await sendOneRequest();
-
-
-                    /*
-                     * Success.
-                     */
-
-                    return data;
-
-                }
-
-
-                catch (error) {
-
-                    lastError =
-                        error;
-
-
-                    console.error(
-                        "BikkyChem attempt " +
-                        attempt +
-                        " failed:",
-                        error
-                    );
-
-
-                    /*
-                     * If this is not a temporary error,
-                     * stop immediately.
-                     */
-
-                    const retryable =
-                        error.retryable === true ||
-                        isRetryableError(
-                            error.statusCode,
-                            error.message
-                        );
-
-
-                    if (
-                        !retryable ||
-                        attempt === MAX_ATTEMPTS
-                    ) {
-
-                        break;
-                    }
-
-                }
-
-            }
-
-
-            /*
-             * All attempts failed.
-             */
-
-            throw lastError ||
-                new Error(
-                    "Unable to contact the BikkyChem server."
-                );
-        }
-
-
-        /* ==================================================
-           DISPLAY RESULT
-           ================================================== */
-
-        function displayResult(data) {
-
-            document
-                .getElementById("topic")
-                .textContent =
-                    data.topic ||
-                    "Not identified";
-
-
-            document
-                .getElementById("concept")
-                .textContent =
-                    data.concept ||
-                    "Concept not available";
-
-
-            document
-                .getElementById("formula")
-                .textContent =
-                    data.formula ||
-                    "No formula required";
-
-
-            displayList(
-                "given",
-                data.given
-            );
-
-
-            displayList(
-                "required",
-                data.required
-            );
-
-
-            displayList(
-                "steps",
-                data.steps
-            );
-
-
-            displayList(
-                "hints",
-                data.hints
-            );
-
-
-            displayList(
-                "feedback",
-                data.feedback
-            );
-
-
-            result.style.display =
-                "block";
-
-
-            result.scrollIntoView({
-
-                behavior: "smooth",
-
-                block: "start"
-
-            });
-
-        }
-
-
-        /* ==================================================
            ASK BIKKYCHEM
            ================================================== */
 
         async function askBikkyChem() {
-
-
-            /*
-             * Prevent accidental double-click requests.
-             */
-
-            if (requestInProgress) {
-
-                return;
-            }
 
 
             const question =
@@ -1695,30 +1128,28 @@
                 !question
             ) {
 
-                clearResult();
-
-
                 showError(
                     "Please type a Chemistry question or upload a question file."
                 );
+
+
+                result.style.display =
+                    "none";
 
 
                 return;
             }
 
 
-            /*
-             * Clear previous answer BEFORE every
-             * new request.
-             *
-             * This prevents the previous question's
-             * answer from remaining on screen.
-             */
-
-            clearResult();
-
+            /* ==================================================
+               RESET
+               ================================================== */
 
             errorBox.style.display =
+                "none";
+
+
+            result.style.display =
                 "none";
 
 
@@ -1730,28 +1161,226 @@
                 true;
 
 
-            requestInProgress =
-                true;
-
-
             try {
 
 
-                /*
-                 * Send request with automatic retry.
-                 */
-
-                const data =
-                    await requestWithRetry();
+                let response;
 
 
-                /*
-                 * Display only the NEW answer.
-                 */
+                /* ==================================================
+                   IMAGE / FILE QUESTION
+                   ================================================== */
 
-                displayResult(
-                    data
+                if (selectedFile) {
+
+
+                    const formData =
+                        new FormData();
+
+
+                    formData.append(
+                        "file",
+                        selectedFile
+                    );
+
+
+                    response =
+                        await fetch(
+                            "{{ url_for('ask') }}",
+                            {
+
+                                method: "POST",
+
+                                body: formData
+
+                            }
+                        );
+
+                }
+
+
+                /* ==================================================
+                   TEXT QUESTION
+                   ================================================== */
+
+                else {
+
+
+                    response =
+                        await fetch(
+                            "{{ url_for('ask') }}",
+                            {
+
+                                method: "POST",
+
+                                headers: {
+
+                                    "Content-Type":
+                                        "application/json",
+
+                                    "Accept":
+                                        "application/json"
+
+                                },
+
+
+                                body:
+                                    JSON.stringify({
+
+                                        question:
+                                            question
+
+                                    })
+
+                            }
+                        );
+
+                }
+
+
+                /* ==================================================
+                   READ SERVER RESPONSE
+                   ================================================== */
+
+                const responseText =
+                    await response.text();
+
+
+                let data;
+
+
+                try {
+
+                    data =
+                        JSON.parse(
+                            responseText
+                        );
+
+                }
+
+                catch (jsonError) {
+
+                    throw new Error(
+                        "The server returned an invalid response."
+                    );
+
+                }
+
+
+                /* ==================================================
+                   SERVER ERROR
+                   ================================================== */
+
+                if (
+                    !response.ok ||
+                    data.status === "error"
+                ) {
+
+                    throw new Error(
+
+                        data.message ||
+                        "Unable to process the question."
+
+                    );
+
+                }
+
+
+                /* ==================================================
+                   TOPIC
+                   ================================================== */
+
+                document
+                    .getElementById("topic")
+                    .textContent =
+                        data.topic ||
+                        "Not identified";
+
+
+                /* ==================================================
+                   CONCEPT
+                   ================================================== */
+
+                document
+                    .getElementById("concept")
+                    .textContent =
+                        data.concept ||
+                        "Concept not available";
+
+
+                /* ==================================================
+                   FORMULA
+                   ================================================== */
+
+                document
+                    .getElementById("formula")
+                    .textContent =
+                        data.formula ||
+                        "No formula required";
+
+
+                /* ==================================================
+                   GIVEN
+                   ================================================== */
+
+                displayList(
+                    "given",
+                    data.given
                 );
+
+
+                /* ==================================================
+                   REQUIRED
+                   ================================================== */
+
+                displayList(
+                    "required",
+                    data.required
+                );
+
+
+                /* ==================================================
+                   STEPS
+                   ================================================== */
+
+                displayList(
+                    "steps",
+                    data.steps
+                );
+
+
+                /* ==================================================
+                   HINTS
+                   ================================================== */
+
+                displayList(
+                    "hints",
+                    data.hints
+                );
+
+
+                /* ==================================================
+                   FEEDBACK
+                   ================================================== */
+
+                displayList(
+                    "feedback",
+                    data.feedback
+                );
+
+
+                /* ==================================================
+                   SHOW RESULT
+                   ================================================== */
+
+                result.style.display =
+                    "block";
+
+
+                result.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
 
             }
 
@@ -1760,31 +1389,16 @@
 
 
                 console.error(
-                    "BikkyChem final error:",
+                    "BikkyChem Error:",
                     error
                 );
 
 
-                /*
-                 * Show the actual error after
-                 * all retry attempts have failed.
-                 */
-
-                let message =
-                    error.message ||
-                    "Something went wrong. Please try again.";
-
-
-                /*
-                 * Make the final error easier
-                 * for us to diagnose.
-                 */
-
                 showError(
-                    "BikkyChem could not process the question after " +
-                    MAX_ATTEMPTS +
-                    " attempts.\n\n" +
-                    message
+
+                    error.message ||
+                    "Something went wrong. Please try again."
+
                 );
 
             }
@@ -1797,15 +1411,7 @@
                     "none";
 
 
-                loading.textContent =
-                    "";
-
-
                 askButton.disabled =
-                    false;
-
-
-                requestInProgress =
                     false;
 
             }
@@ -1837,14 +1443,54 @@
                     event.key === "Enter"
                 ) {
 
-                    event.preventDefault();
-
                     askBikkyChem();
 
                 }
 
             }
         );
+
+
+        /* ==================================================
+           SERVICE WORKER REGISTRATION
+           ================================================== */
+
+        if (
+            "serviceWorker" in navigator
+        ) {
+
+            window.addEventListener(
+                "load",
+                function() {
+
+                    navigator.serviceWorker
+                        .register(
+                            "{{ url_for('static', filename='service-worker.js') }}"
+                        )
+                        .then(
+                            function() {
+
+                                console.log(
+                                    "BikkyChem service worker registered successfully."
+                                );
+
+                            }
+                        )
+                        .catch(
+                            function(error) {
+
+                                console.error(
+                                    "BikkyChem service worker registration failed:",
+                                    error
+                                );
+
+                            }
+                        );
+
+                }
+            );
+
+        }
 
 
     </script>
