@@ -11,6 +11,29 @@
     <title>BikkyChem AI</title>
 
 
+    <!-- ==================================================
+         PWA CONFIGURATION
+         ================================================== -->
+
+    <link rel="manifest"
+          href="{{ url_for('static', filename='manifest.json') }}">
+
+    <meta name="theme-color"
+          content="#0f4c81">
+
+    <meta name="mobile-web-app-capable"
+          content="yes">
+
+    <meta name="apple-mobile-web-app-capable"
+          content="yes">
+
+    <meta name="apple-mobile-web-app-status-bar-style"
+          content="default">
+
+    <meta name="apple-mobile-web-app-title"
+          content="BikkyChem">
+
+
     <style>
 
         * {
@@ -131,7 +154,7 @@
 
 
         /* ==================================================
-           TEXTAREA
+           TEXT QUESTION
            ================================================== */
 
         textarea {
@@ -428,8 +451,6 @@
             color: #0f4c81;
 
             font-weight: bold;
-
-            line-height: 1.6;
         }
 
 
@@ -642,7 +663,7 @@
 
 
             <!-- ==================================================
-                 OR
+                 OR DIVIDER
                  ================================================== -->
 
             <div class="or-divider">
@@ -675,7 +696,7 @@
                 <input
                     type="file"
                     id="fileInput"
-                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                    accept=".jpg,.jpeg,.png,.pdf,.docx"
                 >
 
 
@@ -846,12 +867,10 @@
 
 
         /* ==================================================
-           GLOBAL STATE
+           GLOBAL FILE VARIABLE
            ================================================== */
 
         let selectedFile = null;
-
-        let requestInProgress = false;
 
 
         /* ==================================================
@@ -919,75 +938,6 @@
 
 
         /* ==================================================
-           CLEAR RESULT
-           ================================================== */
-
-        function clearResult() {
-
-            result.style.display =
-                "none";
-
-            errorBox.style.display =
-                "none";
-
-            document
-                .getElementById("topic")
-                .textContent = "";
-
-            document
-                .getElementById("concept")
-                .textContent = "";
-
-            document
-                .getElementById("formula")
-                .textContent = "";
-
-            document
-                .getElementById("given")
-                .innerHTML = "";
-
-            document
-                .getElementById("required")
-                .innerHTML = "";
-
-            document
-                .getElementById("steps")
-                .innerHTML = "";
-
-            document
-                .getElementById("hints")
-                .innerHTML = "";
-
-            document
-                .getElementById("feedback")
-                .innerHTML = "";
-
-        }
-
-
-        /* ==================================================
-           CLEAR FILE
-           ================================================== */
-
-        function clearSelectedFile() {
-
-            selectedFile = null;
-
-            fileInput.value = "";
-
-            selectedFileBox.style.display =
-                "none";
-
-            selectedFileName.textContent =
-                "";
-
-            selectedFileSize.textContent =
-                "";
-
-        }
-
-
-        /* ==================================================
            FILE SIZE FORMATTER
            ================================================== */
 
@@ -996,7 +946,6 @@
             if (bytes < 1024) {
 
                 return bytes + " bytes";
-
             }
 
 
@@ -1006,7 +955,6 @@
                     (bytes / 1024).toFixed(1)
                     + " KB"
                 );
-
             }
 
 
@@ -1014,7 +962,6 @@
                 (bytes / (1024 * 1024)).toFixed(1)
                 + " MB"
             );
-
         }
 
 
@@ -1026,26 +973,19 @@
             "change",
             function() {
 
+
                 if (
                     !this.files ||
                     this.files.length === 0
                 ) {
 
-                    clearSelectedFile();
+                    selectedFile = null;
+
+                    selectedFileBox.style.display =
+                        "none";
 
                     return;
-
                 }
-
-
-                /*
-                 * A new file has been selected.
-                 *
-                 * Clear the old answer because
-                 * this is now a new question.
-                 */
-
-                clearResult();
 
 
                 selectedFile =
@@ -1066,6 +1006,10 @@
                 selectedFileBox.style.display =
                     "block";
 
+
+                errorBox.style.display =
+                    "none";
+
             }
         );
 
@@ -1078,47 +1022,12 @@
             "click",
             function() {
 
-                clearSelectedFile();
+                selectedFile = null;
 
-                clearResult();
+                fileInput.value = "";
 
-            }
-        );
-
-
-        /* ==================================================
-           IMPORTANT:
-           WHEN USER STARTS TYPING A NEW TEXT QUESTION
-           ================================================== */
-
-        questionBox.addEventListener(
-            "input",
-            function() {
-
-                /*
-                 * If the student starts typing a new
-                 * question, the old uploaded file
-                 * must NOT be used.
-                 *
-                 * This is the main fix for the problem
-                 * you reported.
-                 */
-
-                if (
-                    questionBox.value.trim() !== ""
-                ) {
-
-                    clearSelectedFile();
-
-                    /*
-                     * Also clear the previous AI result
-                     * so the old answer cannot remain
-                     * visible.
-                     */
-
-                    clearResult();
-
-                }
+                selectedFileBox.style.display =
+                    "none";
 
             }
         );
@@ -1135,7 +1044,6 @@
 
             errorBox.style.display =
                 "block";
-
         }
 
 
@@ -1154,8 +1062,7 @@
                 );
 
 
-            element.innerHTML =
-                "";
+            element.innerHTML = "";
 
 
             if (
@@ -1164,7 +1071,6 @@
             ) {
 
                 return;
-
             }
 
 
@@ -1192,328 +1098,19 @@
 
 
         /* ==================================================
-           WAIT FUNCTION
-           ================================================== */
-
-        function wait(milliseconds) {
-
-            return new Promise(
-                function(resolve) {
-
-                    setTimeout(
-                        resolve,
-                        milliseconds
-                    );
-
-                }
-            );
-
-        }
-
-
-        /* ==================================================
-           SEND REQUEST
-           ================================================== */
-
-        async function sendRequest() {
-
-            /*
-             * IMPORTANT:
-             *
-             * At the exact moment the request is created,
-             * determine whether this is TEXT or FILE mode.
-             */
-
-            const currentFile =
-                selectedFile;
-
-
-            const currentQuestion =
-                questionBox.value.trim();
-
-
-            /*
-             * FILE MODE
-             */
-
-            if (currentFile) {
-
-                const formData =
-                    new FormData();
-
-
-                formData.append(
-                    "file",
-                    currentFile
-                );
-
-
-                return fetch(
-                    "{{ url_for('ask') }}",
-                    {
-
-                        method: "POST",
-
-                        body: formData
-
-                    }
-                );
-
-            }
-
-
-            /*
-             * TEXT MODE
-             */
-
-            if (currentQuestion) {
-
-                return fetch(
-                    "{{ url_for('ask') }}",
-                    {
-
-                        method: "POST",
-
-                        headers: {
-
-                            "Content-Type":
-                                "application/json",
-
-                            "Accept":
-                                "application/json"
-
-                        },
-
-                        body:
-                            JSON.stringify({
-
-                                question:
-                                    currentQuestion
-
-                            })
-
-                    }
-                );
-
-            }
-
-
-            throw new Error(
-                "Please type a Chemistry question or upload a question file."
-            );
-
-        }
-
-
-        /* ==================================================
-           REQUEST WITH FRONTEND RETRY
-           ================================================== */
-
-        async function requestWithRetry() {
-
-            let lastError =
-                null;
-
-
-            /*
-             * Three browser attempts.
-             */
-
-            for (
-                let attempt = 1;
-                attempt <= 3;
-                attempt++
-            ) {
-
-                try {
-
-                    /*
-                     * Show retry status.
-                     */
-
-                    if (attempt === 1) {
-
-                        loading.textContent =
-                            "BikkyChem is analysing your question...";
-
-                    }
-
-                    else {
-
-                        loading.textContent =
-                            "The AI service is temporarily busy. "
-                            +
-                            "Retrying automatically... "
-                            +
-                            "("
-                            +
-                            attempt
-                            +
-                            "/3)";
-
-                    }
-
-
-                    const response =
-                        await sendRequest();
-
-
-                    const responseText =
-                        await response.text();
-
-
-                    let data;
-
-
-                    try {
-
-                        data =
-                            JSON.parse(
-                                responseText
-                            );
-
-                    }
-
-                    catch (jsonError) {
-
-                        throw new Error(
-                            "The server returned an invalid response."
-                        );
-
-                    }
-
-
-                    /*
-                     * If Flask reports an error,
-                     * retry it.
-                     */
-
-                    if (
-                        !response.ok ||
-                        data.status === "error"
-                    ) {
-
-                        throw new Error(
-
-                            data.message ||
-                            "Unable to process the question."
-
-                        );
-
-                    }
-
-
-                    /*
-                     * SUCCESS
-                     */
-
-                    return data;
-
-                }
-
-
-                catch (error) {
-
-                    lastError =
-                        error;
-
-
-                    console.error(
-                        "Attempt "
-                        +
-                        attempt
-                        +
-                        " failed:",
-                        error
-                    );
-
-
-                    /*
-                     * If this was not the final attempt,
-                     * wait before retrying.
-                     */
-
-                    if (
-                        attempt < 3
-                    ) {
-
-                        /*
-                         * 1st retry:
-                         * 1 second
-                         *
-                         * 2nd retry:
-                         * 2 seconds
-                         */
-
-                        const delay =
-                            attempt === 1
-                            ? 1000
-                            : 2000;
-
-
-                        await wait(
-                            delay
-                        );
-
-                    }
-
-                }
-
-            }
-
-
-            /*
-             * All attempts failed.
-             */
-
-            throw new Error(
-
-                "BikkyChem tried 3 times, "
-                +
-                "but the AI service could not process "
-                +
-                "the question.\n\n"
-                +
-                "Last error: "
-                +
-                (
-                    lastError
-                    ? lastError.message
-                    : "Unknown error"
-                )
-
-            );
-
-        }
-
-
-        /* ==================================================
            ASK BIKKYCHEM
            ================================================== */
 
         async function askBikkyChem() {
 
 
-            /*
-             * Prevent double-click requests.
-             */
-
-            if (
-                requestInProgress
-            ) {
-
-                return;
-
-            }
-
-
             const question =
                 questionBox.value.trim();
 
 
-            /*
-             * Validation.
-             */
+            /* ==================================================
+               VALIDATION
+               ================================================== */
 
             if (
                 !selectedFile &&
@@ -1530,17 +1127,12 @@
 
 
                 return;
-
             }
 
 
-            /*
-             * Start request.
-             */
-
-            requestInProgress =
-                true;
-
+            /* ==================================================
+               RESET
+               ================================================== */
 
             errorBox.style.display =
                 "none";
@@ -1561,12 +1153,126 @@
             try {
 
 
-                /*
-                 * Send with automatic retry.
-                 */
+                let response;
 
-                const data =
-                    await requestWithRetry();
+
+                /* ==================================================
+                   FILE QUESTION
+                   ================================================== */
+
+                if (selectedFile) {
+
+
+                    const formData =
+                        new FormData();
+
+
+                    formData.append(
+                        "file",
+                        selectedFile
+                    );
+
+
+                    response =
+                        await fetch(
+                            "{{ url_for('ask') }}",
+                            {
+
+                                method: "POST",
+
+                                body: formData
+
+                            }
+                        );
+
+                }
+
+
+                /* ==================================================
+                   TEXT QUESTION
+                   ================================================== */
+
+                else {
+
+
+                    response =
+                        await fetch(
+                            "{{ url_for('ask') }}",
+                            {
+
+                                method: "POST",
+
+                                headers: {
+
+                                    "Content-Type":
+                                        "application/json",
+
+                                    "Accept":
+                                        "application/json"
+
+                                },
+
+
+                                body:
+                                    JSON.stringify({
+
+                                        question:
+                                            question
+
+                                    })
+
+                            }
+                        );
+
+                }
+
+
+                /* ==================================================
+                   READ SERVER RESPONSE
+                   ================================================== */
+
+                const responseText =
+                    await response.text();
+
+
+                let data;
+
+
+                try {
+
+                    data =
+                        JSON.parse(
+                            responseText
+                        );
+
+                }
+
+                catch (jsonError) {
+
+                    throw new Error(
+                        "The server returned an invalid response."
+                    );
+
+                }
+
+
+                /* ==================================================
+                   SERVER ERROR
+                   ================================================== */
+
+                if (
+                    !response.ok ||
+                    data.status === "error"
+                ) {
+
+                    throw new Error(
+
+                        data.message ||
+                        "Unable to process the question."
+
+                    );
+
+                }
 
 
                 /* ==================================================
@@ -1603,7 +1309,7 @@
 
 
                 /* ==================================================
-                   GIVEN
+                   DISPLAY GIVEN
                    ================================================== */
 
                 displayList(
@@ -1613,7 +1319,7 @@
 
 
                 /* ==================================================
-                   REQUIRED
+                   DISPLAY REQUIRED
                    ================================================== */
 
                 displayList(
@@ -1623,7 +1329,7 @@
 
 
                 /* ==================================================
-                   STEPS
+                   DISPLAY STEPS
                    ================================================== */
 
                 displayList(
@@ -1633,7 +1339,7 @@
 
 
                 /* ==================================================
-                   HINTS
+                   DISPLAY HINTS
                    ================================================== */
 
                 displayList(
@@ -1643,7 +1349,7 @@
 
 
                 /* ==================================================
-                   FEEDBACK
+                   DISPLAY FEEDBACK
                    ================================================== */
 
                 displayList(
@@ -1661,18 +1367,21 @@
 
 
                 result.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
 
+                    behavior: "smooth",
+
+                    block: "start"
+
+                });
 
             }
 
 
             catch (error) {
 
+
                 console.error(
-                    "BikkyChem final error:",
+                    "BikkyChem Error:",
                     error
                 );
 
@@ -1689,15 +1398,12 @@
 
             finally {
 
+
                 loading.style.display =
                     "none";
 
 
                 askButton.disabled =
-                    false;
-
-
-                requestInProgress =
                     false;
 
             }
@@ -1724,15 +1430,10 @@
             function(event) {
 
                 if (
-                    (
-                        event.ctrlKey ||
-                        event.metaKey
-                    )
-                    &&
+                    (event.ctrlKey ||
+                     event.metaKey) &&
                     event.key === "Enter"
                 ) {
-
-                    event.preventDefault();
 
                     askBikkyChem();
 
@@ -1740,6 +1441,49 @@
 
             }
         );
+
+
+        /* ==================================================
+           PWA SERVICE WORKER
+           ================================================== */
+
+        if ("serviceWorker" in navigator) {
+
+            window.addEventListener(
+                "load",
+                function() {
+
+                    navigator.serviceWorker
+                        .register(
+                            "{{ url_for('static', filename='service-worker.js') }}"
+                        )
+
+                        .then(
+                            function(registration) {
+
+                                console.log(
+                                    "BikkyChem service worker registered:",
+                                    registration.scope
+                                );
+
+                            }
+                        )
+
+                        .catch(
+                            function(error) {
+
+                                console.error(
+                                    "BikkyChem service worker registration failed:",
+                                    error
+                                );
+
+                            }
+                        );
+
+                }
+            );
+
+        }
 
 
     </script>
