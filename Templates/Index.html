@@ -8,41 +8,16 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
+    <meta name="theme-color"
+          content="#0f4c81">
+
+    <meta name="description"
+          content="BikkyChem AI - AI-powered Chemistry guidance through topics, formulas, steps and hints.">
+
+    <link rel="manifest"
+          href="{{ url_for('static', filename='manifest.json') }}">
+
     <title>BikkyChem AI</title>
-
-    <!-- ==================================================
-         PWA / MOBILE APP CONFIGURATION
-         ================================================== -->
-
-    <link
-        rel="manifest"
-        href="{{ url_for('static', filename='manifest.json') }}"
-    >
-
-    <meta
-        name="theme-color"
-        content="#0f4c81"
-    >
-
-    <meta
-        name="apple-mobile-web-app-capable"
-        content="yes"
-    >
-
-    <meta
-        name="apple-mobile-web-app-status-bar-style"
-        content="default"
-    >
-
-    <meta
-        name="apple-mobile-web-app-title"
-        content="BikkyChem"
-    >
-
-    <link
-        rel="apple-touch-icon"
-        href="{{ url_for('static', filename='Icons/Icon-192.png') }}"
-    >
 
 
     <style>
@@ -544,6 +519,16 @@
         }
 
 
+        #steps li,
+        #hints li,
+        #given li,
+        #required li,
+        #feedback li {
+
+            margin-bottom: 7px;
+        }
+
+
         /* ==================================================
            FOOTER
            ================================================== */
@@ -884,6 +869,16 @@
         let selectedFile = null;
 
 
+        /*
+         * This number identifies the current request.
+         *
+         * It prevents an old/slow server response from
+         * overwriting a newer question.
+         */
+
+        let currentRequestId = 0;
+
+
         /* ==================================================
            ELEMENTS
            ================================================== */
@@ -977,6 +972,292 @@
 
 
         /* ==================================================
+           OBJECT / ARRAY TEXT NORMALIZER
+           ==================================================
+
+           This is the important permanent fix.
+
+           AI responses may contain:
+
+           "Step 1"
+
+           OR
+
+           {
+               "step": "Identify q",
+               "explanation": "..."
+           }
+
+           OR
+
+           {
+               "instruction": "...",
+               "hint": "..."
+           }
+
+           The old code directly used:
+
+               li.textContent = item;
+
+           which produces:
+
+               [object Object]
+
+           This function safely converts strings,
+           numbers, arrays and objects into readable text.
+        */
+
+        function normalizeValue(value) {
+
+
+            /* ------------------------------------------------
+               NULL / UNDEFINED
+               ------------------------------------------------ */
+
+            if (
+                value === null ||
+                value === undefined
+            ) {
+
+                return "";
+            }
+
+
+            /* ------------------------------------------------
+               STRING
+               ------------------------------------------------ */
+
+            if (
+                typeof value === "string"
+            ) {
+
+                return value.trim();
+            }
+
+
+            /* ------------------------------------------------
+               NUMBER / BOOLEAN
+               ------------------------------------------------ */
+
+            if (
+                typeof value === "number" ||
+                typeof value === "boolean"
+            ) {
+
+                return String(value);
+            }
+
+
+            /* ------------------------------------------------
+               ARRAY
+               ------------------------------------------------ */
+
+            if (
+                Array.isArray(value)
+            ) {
+
+                return value
+                    .map(
+                        function(item) {
+
+                            return normalizeValue(
+                                item
+                            );
+
+                        }
+                    )
+                    .filter(
+                        function(item) {
+
+                            return item !== "";
+
+                        }
+                    )
+                    .join(" ");
+            }
+
+
+            /* ------------------------------------------------
+               OBJECT
+               ------------------------------------------------ */
+
+            if (
+                typeof value === "object"
+            ) {
+
+                /*
+                 * We try the most useful common
+                 * AI response fields first.
+                 */
+
+                const preferredKeys = [
+
+                    "text",
+
+                    "step",
+
+                    "instruction",
+
+                    "explanation",
+
+                    "description",
+
+                    "content",
+
+                    "answer",
+
+                    "hint",
+
+                    "feedback",
+
+                    "message",
+
+                    "value",
+
+                    "formula",
+
+                    "equation",
+
+                    "concept",
+
+                    "topic",
+
+                    "name"
+
+                ];
+
+
+                let parts = [];
+
+
+                preferredKeys.forEach(
+                    function(key) {
+
+                        if (
+                            Object.prototype.hasOwnProperty.call(
+                                value,
+                                key
+                            )
+                        ) {
+
+                            const text =
+                                normalizeValue(
+                                    value[key]
+                                );
+
+
+                            if (
+                                text &&
+                                !parts.includes(text)
+                            ) {
+
+                                parts.push(text);
+
+                            }
+
+                        }
+
+                    }
+                );
+
+
+                /*
+                 * If none of the preferred keys
+                 * were found, safely process all
+                 * remaining object properties.
+                 */
+
+                if (
+                    parts.length === 0
+                ) {
+
+                    Object.keys(value)
+                        .forEach(
+                            function(key) {
+
+                                const text =
+                                    normalizeValue(
+                                        value[key]
+                                    );
+
+
+                                if (
+                                    text &&
+                                    !parts.includes(text)
+                                ) {
+
+                                    parts.push(text);
+
+                                }
+
+                            }
+                        );
+
+                }
+
+
+                return parts.join(" — ");
+            }
+
+
+            /* ------------------------------------------------
+               FALLBACK
+               ------------------------------------------------ */
+
+            try {
+
+                return JSON.stringify(
+                    value
+                );
+
+            }
+
+            catch (error) {
+
+                return String(value);
+
+            }
+
+        }
+
+
+        /* ==================================================
+           DISPLAY SINGLE VALUE
+           ==================================================
+
+           Used for Topic, Concept and Formula.
+
+           It also protects these fields if the AI
+           unexpectedly returns an object.
+        */
+
+        function displayValue(
+            elementId,
+            value,
+            fallback
+        ) {
+
+            const element =
+                document.getElementById(
+                    elementId
+                );
+
+
+            const text =
+                normalizeValue(
+                    value
+                );
+
+
+            element.textContent =
+                text ||
+                fallback ||
+                "";
+
+        }
+
+
+        /* ==================================================
            FILE SELECTED
            ================================================== */
 
@@ -1003,6 +1284,22 @@
                     this.files[0];
 
 
+                /*
+                 * A new file means a new question source.
+                 *
+                 * We hide the previous result so that
+                 * the user never mistakes an old answer
+                 * for the current question.
+                 */
+
+                result.style.display =
+                    "none";
+
+
+                errorBox.style.display =
+                    "none";
+
+
                 selectedFileName.textContent =
                     "📄 " +
                     selectedFile.name;
@@ -1016,10 +1313,6 @@
 
                 selectedFileBox.style.display =
                     "block";
-
-
-                errorBox.style.display =
-                    "none";
 
             }
         );
@@ -1038,6 +1331,19 @@
                 fileInput.value = "";
 
                 selectedFileBox.style.display =
+                    "none";
+
+
+                /*
+                 * Clear any old error/result.
+                 * This gives a completely clean state
+                 * for the next text question.
+                 */
+
+                errorBox.style.display =
+                    "none";
+
+                result.style.display =
                     "none";
 
             }
@@ -1060,7 +1366,33 @@
 
         /* ==================================================
            DISPLAY LIST
-           ================================================== */
+           ==================================================
+
+           This is the second important permanent fix.
+
+           Every item is passed through normalizeValue()
+           before being placed in the <li>.
+
+           Therefore:
+
+               "Step text"
+
+           remains:
+
+               Step text
+
+           and:
+
+               {step: "Step text"}
+
+           becomes:
+
+               Step text
+
+           instead of:
+
+               [object Object]
+        */
 
         function displayList(
             elementId,
@@ -1077,16 +1409,50 @@
 
 
             if (
-                !Array.isArray(items) ||
-                items.length === 0
+                items === null ||
+                items === undefined
             ) {
 
                 return;
             }
 
 
+            /*
+             * If the AI returns a single object
+             * instead of an array, convert it into
+             * a one-item array.
+             */
+
+            if (
+                !Array.isArray(items)
+            ) {
+
+                items = [items];
+
+            }
+
+
             items.forEach(
                 function(item) {
+
+
+                    const text =
+                        normalizeValue(
+                            item
+                        );
+
+
+                    /*
+                     * Ignore completely empty items.
+                     */
+
+                    if (
+                        !text
+                    ) {
+
+                        return;
+                    }
+
 
                     const li =
                         document.createElement(
@@ -1095,7 +1461,7 @@
 
 
                     li.textContent =
-                        item;
+                        text;
 
 
                     element.appendChild(
@@ -1103,6 +1469,66 @@
                     );
 
                 }
+            );
+
+        }
+
+
+        /* ==================================================
+           CLEAR OLD RESULT CONTENT
+           ================================================== */
+
+        function clearResult() {
+
+
+            displayValue(
+                "topic",
+                "",
+                ""
+            );
+
+
+            displayValue(
+                "concept",
+                "",
+                ""
+            );
+
+
+            displayValue(
+                "formula",
+                "",
+                ""
+            );
+
+
+            displayList(
+                "given",
+                []
+            );
+
+
+            displayList(
+                "required",
+                []
+            );
+
+
+            displayList(
+                "steps",
+                []
+            );
+
+
+            displayList(
+                "hints",
+                []
+            );
+
+
+            displayList(
+                "feedback",
+                []
             );
 
         }
@@ -1142,6 +1568,14 @@
 
 
             /* ==================================================
+               NEW REQUEST ID
+               ================================================== */
+
+            const requestId =
+                ++currentRequestId;
+
+
+            /* ==================================================
                RESET
                ================================================== */
 
@@ -1151,6 +1585,9 @@
 
             result.style.display =
                 "none";
+
+
+            clearResult();
 
 
             loading.style.display =
@@ -1171,8 +1608,17 @@
                    IMAGE / FILE QUESTION
                    ================================================== */
 
-                if (selectedFile) {
+                if (
+                    selectedFile
+                ) {
 
+
+                    /*
+                     * FormData automatically creates the correct
+                     * multipart/form-data request.
+                     *
+                     * Do NOT manually set Content-Type.
+                     */
 
                     const formData =
                         new FormData();
@@ -1191,7 +1637,15 @@
 
                                 method: "POST",
 
-                                body: formData
+                                body:
+                                    formData,
+
+                                headers: {
+
+                                    "Accept":
+                                        "application/json"
+
+                                }
 
                             }
                         );
@@ -1235,6 +1689,22 @@
                             }
                         );
 
+                }
+
+
+                /* ==================================================
+                   CHECK REQUEST ID
+                   ==================================================
+
+                   If another request has already started,
+                   ignore this older response.
+                */
+
+                if (
+                    requestId !== currentRequestId
+                ) {
+
+                    return;
                 }
 
 
@@ -1287,36 +1757,64 @@
 
 
                 /* ==================================================
+                   SAFETY CHECK
+                   ================================================== */
+
+                if (
+                    !data ||
+                    typeof data !== "object"
+                ) {
+
+                    throw new Error(
+                        "The server returned an unexpected response."
+                    );
+
+                }
+
+
+                /* ==================================================
                    TOPIC
                    ================================================== */
 
-                document
-                    .getElementById("topic")
-                    .textContent =
-                        data.topic ||
-                        "Not identified";
+                displayValue(
+
+                    "topic",
+
+                    data.topic,
+
+                    "Not identified"
+
+                );
 
 
                 /* ==================================================
                    CONCEPT
                    ================================================== */
 
-                document
-                    .getElementById("concept")
-                    .textContent =
-                        data.concept ||
-                        "Concept not available";
+                displayValue(
+
+                    "concept",
+
+                    data.concept,
+
+                    "Concept not available"
+
+                );
 
 
                 /* ==================================================
                    FORMULA
                    ================================================== */
 
-                document
-                    .getElementById("formula")
-                    .textContent =
-                        data.formula ||
-                        "No formula required";
+                displayValue(
+
+                    "formula",
+
+                    data.formula,
+
+                    "No formula required"
+
+                );
 
 
                 /* ==================================================
@@ -1324,8 +1822,11 @@
                    ================================================== */
 
                 displayList(
+
                     "given",
+
                     data.given
+
                 );
 
 
@@ -1334,8 +1835,11 @@
                    ================================================== */
 
                 displayList(
+
                     "required",
+
                     data.required
+
                 );
 
 
@@ -1344,8 +1848,11 @@
                    ================================================== */
 
                 displayList(
+
                     "steps",
+
                     data.steps
+
                 );
 
 
@@ -1354,8 +1861,11 @@
                    ================================================== */
 
                 displayList(
+
                     "hints",
+
                     data.hints
+
                 );
 
 
@@ -1364,8 +1874,11 @@
                    ================================================== */
 
                 displayList(
+
                     "feedback",
+
                     data.feedback
+
                 );
 
 
@@ -1378,8 +1891,13 @@
 
 
                 result.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
+
+                    behavior:
+                        "smooth",
+
+                    block:
+                        "start"
+
                 });
 
             }
@@ -1394,12 +1912,23 @@
                 );
 
 
-                showError(
+                /*
+                 * Only show the error if this is
+                 * still the current request.
+                 */
 
-                    error.message ||
-                    "Something went wrong. Please try again."
+                if (
+                    requestId === currentRequestId
+                ) {
 
-                );
+                    showError(
+
+                        error.message ||
+                        "Something went wrong. Please try again."
+
+                    );
+
+                }
 
             }
 
@@ -1407,12 +1936,23 @@
             finally {
 
 
-                loading.style.display =
-                    "none";
+                /*
+                 * Only change the interface state
+                 * if this is still the active request.
+                 */
+
+                if (
+                    requestId === currentRequestId
+                ) {
+
+                    loading.style.display =
+                        "none";
 
 
-                askButton.disabled =
-                    false;
+                    askButton.disabled =
+                        false;
+
+                }
 
             }
 
@@ -1443,6 +1983,8 @@
                     event.key === "Enter"
                 ) {
 
+                    event.preventDefault();
+
                     askBikkyChem();
 
                 }
@@ -1452,7 +1994,7 @@
 
 
         /* ==================================================
-           SERVICE WORKER REGISTRATION
+           OPTIONAL PWA SERVICE WORKER
            ================================================== */
 
         if (
@@ -1471,7 +2013,7 @@
                             function() {
 
                                 console.log(
-                                    "BikkyChem service worker registered successfully."
+                                    "BikkyChem service worker registered."
                                 );
 
                             }
@@ -1479,8 +2021,8 @@
                         .catch(
                             function(error) {
 
-                                console.error(
-                                    "BikkyChem service worker registration failed:",
+                                console.log(
+                                    "Service worker registration failed:",
                                     error
                                 );
 
