@@ -17,319 +17,319 @@
             box-sizing: border-box;
         }
 
-
         body {
-
             margin: 0;
             padding: 0;
-
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-
+            font-family: Arial, Helvetica, sans-serif;
             background: #f4f7fb;
-
             color: #1f2937;
         }
-
 
         /* =====================================================
            HEADER
            ===================================================== */
 
         .header {
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #0f4c81,
-                    #1976d2
-                );
-
+            background: linear-gradient(135deg, #0f4c81, #1976d2);
             color: white;
-
             text-align: center;
-
             padding: 25px 15px;
         }
 
-
         .logo {
-
             width: 110px;
             height: 110px;
-
             object-fit: contain;
-
             border-radius: 50%;
-
             background: white;
-
             padding: 5px;
-
             margin-bottom: 10px;
         }
 
-
         .header h1 {
-
             margin: 5px 0;
-
             font-size: 32px;
         }
 
-
         .header p {
-
             margin: 5px 0;
-
             font-size: 16px;
         }
-
 
         /* =====================================================
            MAIN CONTAINER
            ===================================================== */
 
         .container {
-
             width: 92%;
-
             max-width: 900px;
-
             margin: 30px auto;
         }
 
-
         .question-section {
-
             background: white;
-
             padding: 25px;
-
             border-radius: 15px;
-
-            box-shadow:
-                0 4px 15px
-                rgba(0,0,0,0.10);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.10);
         }
 
-
         .question-section h2 {
-
             text-align: center;
-
             color: #0f4c81;
-
             margin-top: 0;
         }
 
-
         /* =====================================================
-           QUESTION BOX
+           TEXTAREA
            ===================================================== */
 
         textarea {
-
             width: 100%;
-
             min-height: 150px;
-
             padding: 15px;
-
-            border:
-                1px solid
-                #cbd5e1;
-
+            border: 1px solid #cbd5e1;
             border-radius: 10px;
-
             resize: vertical;
-
             font-size: 16px;
-
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-
+            font-family: Arial, Helvetica, sans-serif;
             outline: none;
         }
 
-
         textarea:focus {
-
             border-color: #1976d2;
-
-            box-shadow:
-                0 0 0 2px
-                rgba(25,118,210,0.12);
+            box-shadow: 0 0 0 2px rgba(25,118,210,0.12);
         }
 
-
         /* =====================================================
-           BUTTON
+           OR DIVIDER
            ===================================================== */
 
-        .button {
-
-            display: block;
-
-            width: 100%;
-
-            margin-top: 15px;
-
-            padding: 14px;
-
-            background: #0f4c81;
-
-            color: white;
-
-            border: none;
-
-            border-radius: 10px;
-
-            font-size: 17px;
-
+        .or-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            color: #64748b;
+            font-size: 14px;
             font-weight: bold;
+        }
 
+        .or-divider::before,
+        .or-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #cbd5e1;
+        }
+
+        /* =====================================================
+           UPLOAD AREA
+           ===================================================== */
+
+        .upload-area {
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            background: #f8fafc;
+            transition: 0.2s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #1976d2;
+            background: #f1f7ff;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .upload-title {
+            color: #0f4c81;
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .upload-info {
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+
+        /* =====================================================
+           HIDDEN FILE INPUT
+           ===================================================== */
+
+        #fileInput {
+            display: none;
+        }
+
+        /* =====================================================
+           CHOOSE FILE BUTTON
+           ===================================================== */
+
+        .upload-button {
+            display: inline-block;
+            padding: 11px 20px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
             cursor: pointer;
         }
 
+        .upload-button:hover {
+            background: #0f4c81;
+        }
+
+        /* =====================================================
+           SELECTED FILE
+           ===================================================== */
+
+        #selectedFile {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: #0f4c81;
+            word-break: break-word;
+        }
+
+        .file-size {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .remove-file {
+            margin-top: 10px;
+            padding: 7px 12px;
+            background: #fee2e2;
+            color: #991b1b;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .remove-file:hover {
+            background: #fecaca;
+        }
+
+        /* =====================================================
+           ASK BUTTON
+           ===================================================== */
+
+        .button {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px;
+            background: #0f4c81;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
         .button:hover {
-
             background: #083b63;
         }
 
-
         .button:disabled {
-
             background: #9ca3af;
-
             cursor: not-allowed;
         }
-
 
         /* =====================================================
            LOADING
            ===================================================== */
 
         #loading {
-
             display: none;
-
             text-align: center;
-
             margin-top: 20px;
-
             color: #0f4c81;
-
             font-weight: bold;
         }
-
 
         /* =====================================================
            ERROR
            ===================================================== */
 
         #error {
-
             display: none;
-
             margin-top: 20px;
-
             padding: 15px;
-
             background: #fee2e2;
-
             color: #991b1b;
-
             border-radius: 8px;
-
             line-height: 1.5;
-
             word-break: break-word;
         }
-
 
         /* =====================================================
            RESULT
            ===================================================== */
 
         #result {
-
             display: none;
-
             margin-top: 25px;
-
             padding: 20px;
-
             background: #f8fafc;
-
-            border-left:
-                5px solid
-                #1976d2;
-
+            border-left: 5px solid #1976d2;
             border-radius: 10px;
         }
 
-
         #result h3 {
-
             color: #0f4c81;
-
             margin-top: 18px;
-
             margin-bottom: 7px;
         }
 
-
         #result h3:first-child {
-
             margin-top: 0;
         }
-
 
         #result p {
-
             margin-top: 0;
-
             line-height: 1.6;
         }
-
 
         #steps,
         #hints,
         #given,
         #required,
         #feedback {
-
             padding-left: 25px;
-
             line-height: 1.7;
         }
-
 
         /* =====================================================
            FOOTER
            ===================================================== */
 
         .footer {
-
             text-align: center;
-
             padding: 25px 15px;
-
             margin-top: 40px;
-
             background: #0f4c81;
-
             color: white;
-
             font-size: 14px;
         }
-
 
         /* =====================================================
            MOBILE
@@ -338,36 +338,29 @@
         @media (max-width: 600px) {
 
             .header h1 {
-
                 font-size: 26px;
             }
 
-
             .header p {
-
                 font-size: 14px;
             }
 
-
             .container {
-
                 width: 95%;
-
                 margin: 20px auto;
             }
 
-
             .question-section {
-
                 padding: 18px;
             }
 
-
             textarea {
-
                 min-height: 130px;
             }
 
+            .upload-area {
+                padding: 16px;
+            }
         }
 
     </style>
@@ -384,24 +377,19 @@
 
     <header class="header">
 
-
         <img
             src="{{ url_for('static', filename='IMG_0898.png') }}"
             alt="BikkyChem Logo"
             class="logo"
         >
 
-
         <h1>BikkyChem AI</h1>
-
 
         <p>
             Learn Chemistry through Topics, Formulas, Steps and Hints
         </p>
 
-
     </header>
-
 
 
     <!-- =====================================================
@@ -410,16 +398,16 @@
 
     <main class="container">
 
-
         <div class="question-section">
-
 
             <h2>
                 Ask a Chemistry Question
             </h2>
 
 
-            <!-- QUESTION -->
+            <!-- =================================================
+                 TEXT QUESTION
+                 ================================================= -->
 
             <textarea
                 id="question"
@@ -427,7 +415,81 @@
             ></textarea>
 
 
-            <!-- BUTTON -->
+            <!-- =================================================
+                 OR
+                 ================================================= -->
+
+            <div class="or-divider">
+                OR
+            </div>
+
+
+            <!-- =================================================
+                 UPLOAD AREA
+                 ================================================= -->
+
+            <div class="upload-area">
+
+                <div class="upload-icon">
+                    📎
+                </div>
+
+                <div class="upload-title">
+                    Upload a Chemistry Question
+                </div>
+
+                <div class="upload-info">
+                    PDF • DOCX • JPG • JPEG • PNG
+                </div>
+
+
+                <!-- Hidden file input -->
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png"
+                >
+
+
+                <!-- Choose file button -->
+
+                <label
+                    for="fileInput"
+                    class="upload-button"
+                >
+                    CHOOSE FILE
+                </label>
+
+
+                <!-- Selected file information -->
+
+                <div id="selectedFile">
+
+                    <div class="file-name"
+                         id="fileName">
+                    </div>
+
+                    <div class="file-size"
+                         id="fileSize">
+                    </div>
+
+                    <button
+                        type="button"
+                        class="remove-file"
+                        onclick="removeSelectedFile()"
+                    >
+                        Remove File
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 ASK BUTTON
+                 ================================================= -->
 
             <button
                 type="button"
@@ -439,7 +501,9 @@
             </button>
 
 
-            <!-- LOADING -->
+            <!-- =================================================
+                 LOADING
+                 ================================================= -->
 
             <div id="loading">
 
@@ -448,19 +512,18 @@
             </div>
 
 
-            <!-- ERROR -->
+            <!-- =================================================
+                 ERROR
+                 ================================================= -->
 
             <div id="error"></div>
 
 
             <!-- =================================================
-                 AI RESULT
+                 RESULT
                  ================================================= -->
 
             <div id="result">
-
-
-                <!-- TOPIC -->
 
                 <h3>
                     Topic
@@ -469,16 +532,12 @@
                 <p id="topic"></p>
 
 
-                <!-- CONCEPT -->
-
                 <h3>
                     Concept
                 </h3>
 
                 <p id="concept"></p>
 
-
-                <!-- FORMULA -->
 
                 <h3>
                     Formula / Equation
@@ -487,16 +546,12 @@
                 <p id="formula"></p>
 
 
-                <!-- GIVEN -->
-
                 <h3>
                     Given
                 </h3>
 
                 <ul id="given"></ul>
 
-
-                <!-- REQUIRED -->
 
                 <h3>
                     Required
@@ -505,16 +560,12 @@
                 <ul id="required"></ul>
 
 
-                <!-- GUIDED STEPS -->
-
                 <h3>
                     Guided Steps
                 </h3>
 
                 <ul id="steps"></ul>
 
-
-                <!-- HINTS -->
 
                 <h3>
                     Hints
@@ -523,23 +574,17 @@
                 <ul id="hints"></ul>
 
 
-                <!-- FEEDBACK -->
-
                 <h3>
                     Feedback
                 </h3>
 
                 <ul id="feedback"></ul>
 
-
             </div>
-
 
         </div>
 
-
     </main>
-
 
 
     <!-- =====================================================
@@ -559,7 +604,6 @@
     </footer>
 
 
-
     <!-- =====================================================
          JAVASCRIPT
          ===================================================== -->
@@ -568,11 +612,197 @@
 
 
         /* =====================================================
-           SAFELY DISPLAY LIST DATA
+           FILE VARIABLES
+           ===================================================== */
+
+        let selectedFile = null;
+
+
+        /* =====================================================
+           FILE SELECTION
+           ===================================================== */
+
+        document
+            .getElementById("fileInput")
+            .addEventListener(
+                "change",
+                function(event) {
+
+                    const file =
+                        event.target.files[0];
+
+
+                    if (!file) {
+
+                        return;
+                    }
+
+
+                    /* -----------------------------------------
+                       Allowed extensions
+                       ----------------------------------------- */
+
+                    const allowedExtensions = [
+                        "pdf",
+                        "docx",
+                        "jpg",
+                        "jpeg",
+                        "png"
+                    ];
+
+
+                    const fileName =
+                        file.name;
+
+
+                    const extension =
+                        fileName
+                            .split(".")
+                            .pop()
+                            .toLowerCase();
+
+
+                    if (
+                        !allowedExtensions
+                            .includes(extension)
+                    ) {
+
+                        showError(
+                            "Unsupported file type. Please upload PDF, DOCX, JPG, JPEG or PNG."
+                        );
+
+                        event.target.value = "";
+
+                        return;
+                    }
+
+
+                    /* -----------------------------------------
+                       Maximum file size
+                       ----------------------------------------- */
+
+                    const maxSize =
+                        10 * 1024 * 1024;
+
+
+                    if (file.size > maxSize) {
+
+                        showError(
+                            "File is too large. Please select a file smaller than 10 MB."
+                        );
+
+                        event.target.value = "";
+
+                        return;
+                    }
+
+
+                    /* -----------------------------------------
+                       Store selected file
+                       ----------------------------------------- */
+
+                    selectedFile =
+                        file;
+
+
+                    document
+                        .getElementById("fileName")
+                        .textContent =
+                            "📄 " + file.name;
+
+
+                    document
+                        .getElementById("fileSize")
+                        .textContent =
+                            formatFileSize(file.size);
+
+
+                    document
+                        .getElementById("selectedFile")
+                        .style.display =
+                            "block";
+
+
+                    document
+                        .getElementById("error")
+                        .style.display =
+                            "none";
+
+                }
+            );
+
+
+        /* =====================================================
+           FORMAT FILE SIZE
+           ===================================================== */
+
+        function formatFileSize(bytes) {
+
+            if (bytes < 1024) {
+
+                return bytes + " bytes";
+            }
+
+            if (bytes < 1024 * 1024) {
+
+                return (
+                    (bytes / 1024).toFixed(1) +
+                    " KB"
+                );
+            }
+
+            return (
+                (bytes / (1024 * 1024)).toFixed(1) +
+                " MB"
+            );
+        }
+
+
+        /* =====================================================
+           REMOVE FILE
+           ===================================================== */
+
+        function removeSelectedFile() {
+
+            selectedFile = null;
+
+
+            document
+                .getElementById("fileInput")
+                .value = "";
+
+
+            document
+                .getElementById("selectedFile")
+                .style.display =
+                    "none";
+        }
+
+
+        /* =====================================================
+           DISPLAY ERROR
+           ===================================================== */
+
+        function showError(message) {
+
+            const errorBox =
+                document.getElementById("error");
+
+
+            errorBox.textContent =
+                message;
+
+
+            errorBox.style.display =
+                "block";
+        }
+
+
+        /* =====================================================
+           DISPLAY LIST
            ===================================================== */
 
         function displayList(elementId, items) {
-
 
             const element =
                 document.getElementById(elementId);
@@ -589,7 +819,6 @@
 
             items.forEach(function(item) {
 
-
                 const li =
                     document.createElement("li");
 
@@ -600,19 +829,22 @@
 
                 element.appendChild(li);
 
-
             });
 
         }
 
 
-
         /* =====================================================
            ASK BIKKYCHEM
+           
+           STAGE 1:
+           Uploaded files are selected but are NOT yet sent
+           to the backend.
+
+           Text questions continue to work normally.
            ===================================================== */
 
         async function askBikkyChem() {
-
 
             const question =
                 document
@@ -638,28 +870,35 @@
 
 
             /* -----------------------------------------------
-               Validate question
+               If a file is selected, tell the user that
+               file processing will be connected in Stage 2.
+               ----------------------------------------------- */
+
+            if (selectedFile) {
+
+                showError(
+                    "The file has been selected successfully. File processing will be connected in the next stage."
+                );
+
+                return;
+            }
+
+
+            /* -----------------------------------------------
+               Text question validation
                ----------------------------------------------- */
 
             if (!question) {
 
-
-                errorBox.textContent =
-                    "Please enter a Chemistry question.";
-
-
-                errorBox.style.display =
-                    "block";
-
+                showError(
+                    "Please type a Chemistry question or upload a question file."
+                );
 
                 result.style.display =
                     "none";
 
-
                 return;
-
             }
-
 
 
             /* -----------------------------------------------
@@ -669,25 +908,20 @@
             errorBox.style.display =
                 "none";
 
-
             result.style.display =
                 "none";
 
-
             loading.style.display =
                 "block";
-
 
             askButton.disabled =
                 true;
 
 
-
             try {
 
-
                 /* -------------------------------------------
-                   Send question to Flask
+                   Send typed question to Flask
                    ------------------------------------------- */
 
                 const response =
@@ -716,9 +950,8 @@
                     );
 
 
-
                 /* -------------------------------------------
-                   Read response safely
+                   Read response
                    ------------------------------------------- */
 
                 const responseText =
@@ -744,9 +977,8 @@
                 }
 
 
-
                 /* -------------------------------------------
-                   Server error
+                   Check server response
                    ------------------------------------------- */
 
                 if (
@@ -754,33 +986,15 @@
                     data.status === "error"
                 ) {
 
-
-                    let message =
+                    throw new Error(
                         data.message ||
-                        "Unable to process the question.";
-
-
-                    if (
-                        data.feedback &&
-                        Array.isArray(data.feedback) &&
-                        data.feedback.length > 0
-                    ) {
-
-                        message +=
-                            " " +
-                            data.feedback.join(" ");
-
-                    }
-
-
-                    throw new Error(message);
-
+                        "Unable to process the question."
+                    );
                 }
 
 
-
                 /* -------------------------------------------
-                   TOPIC
+                   Topic
                    ------------------------------------------- */
 
                 document
@@ -790,9 +1004,8 @@
                         "Not identified";
 
 
-
                 /* -------------------------------------------
-                   CONCEPT
+                   Concept
                    ------------------------------------------- */
 
                 document
@@ -802,9 +1015,8 @@
                         "Concept not available";
 
 
-
                 /* -------------------------------------------
-                   FORMULA
+                   Formula
                    ------------------------------------------- */
 
                 document
@@ -814,9 +1026,8 @@
                         "No formula required";
 
 
-
                 /* -------------------------------------------
-                   GIVEN
+                   Given
                    ------------------------------------------- */
 
                 displayList(
@@ -825,9 +1036,8 @@
                 );
 
 
-
                 /* -------------------------------------------
-                   REQUIRED
+                   Required
                    ------------------------------------------- */
 
                 displayList(
@@ -836,9 +1046,8 @@
                 );
 
 
-
                 /* -------------------------------------------
-                   STEPS
+                   Guided Steps
                    ------------------------------------------- */
 
                 displayList(
@@ -847,9 +1056,8 @@
                 );
 
 
-
                 /* -------------------------------------------
-                   HINTS
+                   Hints
                    ------------------------------------------- */
 
                 displayList(
@@ -858,9 +1066,8 @@
                 );
 
 
-
                 /* -------------------------------------------
-                   FEEDBACK
+                   Feedback
                    ------------------------------------------- */
 
                 displayList(
@@ -869,16 +1076,13 @@
                 );
 
 
-
                 /* -------------------------------------------
-                   SHOW RESULT
+                   Show result
                    ------------------------------------------- */
 
                 result.style.display =
                     "block";
 
-
-                /* Scroll gently to result */
 
                 setTimeout(function() {
 
@@ -889,12 +1093,10 @@
 
                 }, 100);
 
-
             }
 
 
             catch (error) {
-
 
                 console.error(
                     "BikkyChem Error:",
@@ -902,27 +1104,18 @@
                 );
 
 
-                errorBox.textContent =
+                showError(
                     error.message ||
-                    "Something went wrong. Please try again.";
-
-
-                errorBox.style.display =
-                    "block";
-
-
-                result.style.display =
-                    "none";
+                    "Something went wrong. Please try again."
+                );
 
             }
 
 
             finally {
 
-
                 loading.style.display =
                     "none";
-
 
                 askButton.disabled =
                     false;
@@ -930,7 +1123,6 @@
             }
 
         }
-
 
 
         /* =====================================================
@@ -943,16 +1135,13 @@
                 "keydown",
                 function(event) {
 
-
                     if (
                         (event.ctrlKey ||
                          event.metaKey) &&
                         event.key === "Enter"
                     ) {
 
-
                         event.preventDefault();
-
 
                         askBikkyChem();
 
@@ -961,9 +1150,7 @@
                 }
             );
 
-
     </script>
-
 
 </body>
 
