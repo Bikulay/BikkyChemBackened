@@ -4,6 +4,7 @@ import json
 import urllib.request
 import urllib.error
 import base64
+import time
 
 
 app = Flask(__name__, template_folder="Templates")
@@ -22,9 +23,22 @@ OPENROUTER_URL = (
     "https://openrouter.ai/api/v1/chat/completions"
 )
 
-# OpenRouter's free router can select an available
-# model capable of handling the requested modality.
+# OpenRouter free router
 OPENROUTER_MODEL = "openrouter/free"
+
+
+# ============================================================
+# RETRY CONFIGURATION
+# ============================================================
+
+# Maximum number of attempts for one request.
+MAX_RETRIES = 3
+
+# Delay before each retry.
+# Attempt 1 -> failure -> 1 second
+# Attempt 2 -> failure -> 2 seconds
+# Attempt 3 -> failure -> final error
+RETRY_DELAYS = [1, 2]
 
 
 # ============================================================
@@ -50,7 +64,7 @@ def home():
 
 
 # ============================================================
-# COMMON BIKKYCHEM SYSTEM PROMPT
+# BIKKYCHEM SYSTEM PROMPT
 # ============================================================
 
 SYSTEM_PROMPT = """
@@ -58,7 +72,8 @@ You are BikkyChem, an educational Chemistry guidance engine.
 
 Your purpose is NOT to act like an ordinary chatbot.
 
-You must help the student LEARN how to solve the Chemistry problem.
+You must help the student LEARN how to solve the Chemistry
+problem rather than simply giving the answer.
 
 For every Chemistry question:
 
@@ -98,7 +113,11 @@ IMPORTANT FOR IMAGE QUESTIONS:
 
 IMPORTANT:
 
-Return ONLY valid JSON.
+Return ONLY a valid JSON object.
+
+Do not use Markdown.
+Do not use ```json fences.
+Do not write anything before or after the JSON.
 
 Use exactly this structure:
 
@@ -132,47 +151,172 @@ Use exactly this structure:
 
 The "final_answer" field MUST remain empty.
 
-For numerical problems, NEVER put the final numerical
-result in any field.
+For numerical problems:
 
-For conceptual questions, explain the concept through
-the steps and hints rather than giving an unnecessarily
-long answer.
+NEVER put the final numerical result in any field.
+
+For conceptual questions:
+
+Explain the concept through the steps and hints rather
+than giving an unnecessarily long answer.
 """
 
 
 # ============================================================
-# CLEAN AI JSON RESPONSE
+# EXTRACT JSON FROM AI RESPONSE
 # ============================================================
 
-def clean_ai_json(content):
+def extract_json_from_response(content):
 
-    content = content.strip()
+    if content is None:
 
-    # Remove Markdown code fences if the model adds them.
-
-    if content.startswith("```json"):
-
-        content = content[7:]
-
-    elif content.startswith("```"):
-
-        content = content[3:]
+        raise Exception(
+            "OpenRouter returned no content."
+        )
 
 
-    if content.endswith("```"):
+    # --------------------------------------------------------
+    # If already a dictionary
+    # --------------------------------------------------------
 
-        content = content[:-3]
+    if isinstance(content, dict):
+
+        return content
 
 
-    return content.strip()
+    # --------------------------------------------------------
+    # Handle list-style content
+    # --------------------------------------------------------
+
+    if isinstance(content, list):
+
+        text_parts = []
+
+        for item in content:
+
+            if isinstance(item, dict):
+
+                if item.get("type") == "text":
+
+                    text_parts.append(
+                        str(item.get("text", ""))
+                    )
+
+                elif "text" in item:
+
+                    text_parts.append(
+                        str(item.get("text", ""))
+                    )
+
+            elif isinstance(item, str):
+
+                text_parts.append(item)
+
+
+        content = "".join(text_parts)
+
+
+    content = str(content).strip()
+
+
+    if not content:
+
+        raise Exception(
+            "OpenRouter returned an empty response."
+        )
+
+
+    # --------------------------------------------------------
+    # Attempt 1: direct JSON
+    # --------------------------------------------------------
+
+    try:
+
+        return json.loads(content)
+
+    except json.JSONDecodeError:
+
+        pass
+
+
+    # --------------------------------------------------------
+    # Remove Markdown fences
+    # --------------------------------------------------------
+
+    cleaned = content
+
+    cleaned = cleaned.replace(
+        "```json",
+        ""
+    )
+
+    cleaned = cleaned.replace(
+        "```JSON",
+        ""
+    )
+
+    cleaned = cleaned.replace(
+        "```",
+        ""
+    )
+
+    cleaned = cleaned.strip()
+
+
+    # --------------------------------------------------------
+    # Attempt 2
+    # --------------------------------------------------------
+
+    try:
+
+        return json.loads(cleaned)
+
+    except json.JSONDecodeError:
+
+        pass
+
+
+    # --------------------------------------------------------
+    # Attempt 3:
+    # Find JSON object inside additional text.
+    # --------------------------------------------------------
+
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+
+
+    if start != -1 and end != -1 and end > start:
+
+        possible_json = cleaned[
+            start:end + 1
+        ]
+
+
+        try:
+
+            return json.loads(
+                possible_json
+            )
+
+        except json.JSONDecodeError:
+
+            pass
+
+
+    # --------------------------------------------------------
+    # Failed
+    # --------------------------------------------------------
+
+    raise Exception(
+        "The AI response was not valid JSON."
+    )
 
 
 # ============================================================
-# CALL OPENROUTER
+# CALL OPENROUTER ONCE
 # ============================================================
 
-def call_openrouter(messages):
+def call_openrouter_once(messages):
 
     if not OPENROUTER_API_KEY:
 
@@ -183,15 +327,25 @@ def call_openrouter(messages):
 
     payload = {
 
-        "model": OPENROUTER_MODEL,
+        "model":
+            OPENROUTER_MODEL,
 
-        "messages": messages,
+        "messages":
+            messages,
 
-        "temperature": 0.2
+        "temperature":
+            0.1,
+
+        "response_format": {
+            "type": "json_object"
+        }
+
     }
 
 
-    data = json.dumps(payload).encode("utf-8")
+    data = json.dumps(
+        payload
+    ).encode("utf-8")
 
 
     headers = {
@@ -206,7 +360,8 @@ def call_openrouter(messages):
             "https://bikkychem-prototype.onrender.com",
 
         "X-Title":
-            "BikkyChem"
+            "BikkyChem AI"
+
     }
 
 
@@ -219,6 +374,7 @@ def call_openrouter(messages):
         headers=headers,
 
         method="POST"
+
     )
 
 
@@ -232,7 +388,10 @@ def call_openrouter(messages):
             response_data = (
                 response
                 .read()
-                .decode("utf-8")
+                .decode(
+                    "utf-8",
+                    errors="replace"
+                )
             )
 
 
@@ -243,72 +402,231 @@ def call_openrouter(messages):
             errors="replace"
         )
 
+
+        # Give us the actual OpenRouter error.
         raise Exception(
-            f"OpenRouter HTTP {e.code}: {error_body}"
+            f"OpenRouter HTTP {e.code}: "
+            f"{error_body[:1000]}"
         )
 
 
     except urllib.error.URLError as e:
 
         raise Exception(
-            f"Unable to connect to OpenRouter: {e.reason}"
+            "Unable to connect to OpenRouter: "
+            + str(e.reason)
         )
 
 
-    result = json.loads(response_data)
+    except TimeoutError:
+
+        raise Exception(
+            "OpenRouter request timed out."
+        )
 
 
-    content = (
-        result
-        .get("choices", [{}])[0]
-        .get("message", {})
-        .get("content", "")
+    except Exception as e:
+
+        raise Exception(
+            "OpenRouter connection error: "
+            + str(e)
+        )
+
+
+    # --------------------------------------------------------
+    # Parse HTTP response
+    # --------------------------------------------------------
+
+    try:
+
+        result = json.loads(
+            response_data
+        )
+
+    except json.JSONDecodeError:
+
+        raise Exception(
+            "OpenRouter returned a non-JSON response."
+        )
+
+
+    # --------------------------------------------------------
+    # Check API error
+    # --------------------------------------------------------
+
+    if "error" in result:
+
+        error_info = result.get(
+            "error"
+        )
+
+
+        if isinstance(
+            error_info,
+            dict
+        ):
+
+            error_message = error_info.get(
+                "message",
+                str(error_info)
+            )
+
+        else:
+
+            error_message = str(
+                error_info
+            )
+
+
+        raise Exception(
+            "OpenRouter error: "
+            + error_message
+        )
+
+
+    # --------------------------------------------------------
+    # Get choices
+    # --------------------------------------------------------
+
+    choices = result.get(
+        "choices",
+        []
+    )
+
+
+    if not choices:
+
+        raise Exception(
+            "OpenRouter returned no AI choices."
+        )
+
+
+    # --------------------------------------------------------
+    # Get message
+    # --------------------------------------------------------
+
+    message = choices[0].get(
+        "message",
+        {}
+    )
+
+
+    content = message.get(
+        "content",
+        ""
     )
 
 
     if not content:
 
         raise Exception(
-            "OpenRouter returned an empty response."
+            "OpenRouter returned an empty AI response."
         )
 
 
-    content = clean_ai_json(content)
+    # --------------------------------------------------------
+    # Convert AI response to JSON
+    # --------------------------------------------------------
+
+    return extract_json_from_response(
+        content
+    )
 
 
-    try:
+# ============================================================
+# CALL OPENROUTER WITH AUTOMATIC RETRY
+# ============================================================
 
-        return json.loads(content)
+def call_openrouter(messages):
 
-    except json.JSONDecodeError:
+    last_error = None
 
-        raise Exception(
-            "OpenRouter returned an invalid JSON response."
-        )
+
+    for attempt in range(
+        MAX_RETRIES
+    ):
+
+        try:
+
+            return call_openrouter_once(
+                messages
+            )
+
+
+        except Exception as e:
+
+            last_error = e
+
+
+            # -----------------------------------------------
+            # If this was the final attempt, stop.
+            # -----------------------------------------------
+
+            if attempt == MAX_RETRIES - 1:
+
+                break
+
+
+            # -----------------------------------------------
+            # Wait before retry.
+            # -----------------------------------------------
+
+            delay = RETRY_DELAYS[
+                attempt
+            ]
+
+
+            time.sleep(
+                delay
+            )
+
+
+    # --------------------------------------------------------
+    # All attempts failed.
+    # --------------------------------------------------------
+
+    raise Exception(
+        "BikkyChem tried "
+        f"{MAX_RETRIES} times, but OpenRouter "
+        "could not process the request. "
+        f"Last error: {last_error}"
+    )
 
 
 # ============================================================
 # TEXT QUESTION
 # ============================================================
 
-def analyse_text_question(question):
+def analyse_text_question(
+    question
+):
 
     messages = [
 
         {
-            "role": "system",
-            "content": SYSTEM_PROMPT
+            "role":
+                "system",
+
+            "content":
+                SYSTEM_PROMPT
+
         },
 
         {
-            "role": "user",
-            "content": question
+            "role":
+                "user",
+
+            "content":
+                question
+
         }
 
     ]
 
 
-    return call_openrouter(messages)
+    return call_openrouter(
+        messages
+    )
 
 
 # ============================================================
@@ -320,14 +638,18 @@ def analyse_image_question(
     mime_type
 ):
 
-    # Convert uploaded image into Base64.
+    # --------------------------------------------------------
+    # Convert image to Base64
+    # --------------------------------------------------------
 
     encoded_image = base64.b64encode(
         image_bytes
     ).decode("utf-8")
 
 
-    # Create a data URL.
+    # --------------------------------------------------------
+    # Create data URL
+    # --------------------------------------------------------
 
     image_data_url = (
         f"data:{mime_type};base64,"
@@ -338,118 +660,261 @@ def analyse_image_question(
     messages = [
 
         {
-            "role": "system",
-            "content": SYSTEM_PROMPT
+            "role":
+                "system",
+
+            "content":
+                SYSTEM_PROMPT
+
         },
 
         {
-            "role": "user",
+            "role":
+                "user",
 
             "content": [
 
                 {
-                    "type": "text",
+                    "type":
+                        "text",
 
-                    "text": """
+                    "text":
+                        """
 Read the uploaded image carefully.
 
-Identify the Chemistry question shown
-in the image and then analyse it according
-to the BikkyChem learning instructions.
+The image contains a Chemistry question.
+
+Identify exactly what the question asks.
+
+Then provide:
+
+- Topic
+- Concept
+- Formula or chemical principle
+- Given information
+- Required information
+- Guided steps
+- Progressive hints
+- Feedback
+
+Do NOT provide the final answer.
 
 Pay special attention to:
+
 - chemical symbols
 - subscripts
 - superscripts
 - numerical values
 - units
-- equations
+- chemical equations
+- structures
 - diagrams
 - tables
 - graphs
 
-Do not give the final answer.
+If something is unclear, do not guess.
+Mention that the information is unclear.
 """
+
                 },
 
                 {
-                    "type": "image_url",
+                    "type":
+                        "image_url",
 
                     "image_url": {
-                        "url": image_data_url
+
+                        "url":
+                            image_data_url
+
                     }
+
                 }
 
             ]
+
         }
 
     ]
 
 
-    return call_openrouter(messages)
+    return call_openrouter(
+        messages
+    )
 
 
 # ============================================================
 # NORMALISE AI RESPONSE
 # ============================================================
 
-def normalise_result(ai_result):
+def normalise_result(
+    ai_result
+):
+
+    if not isinstance(
+        ai_result,
+        dict
+    ):
+
+        raise Exception(
+            "AI returned an unexpected response format."
+        )
+
+
+    # --------------------------------------------------------
+    # Given
+    # --------------------------------------------------------
+
+    given = ai_result.get(
+        "given",
+        []
+    )
+
+
+    if not isinstance(
+        given,
+        list
+    ):
+
+        given = [
+            str(given)
+        ]
+
+
+    # --------------------------------------------------------
+    # Required
+    # --------------------------------------------------------
+
+    required = ai_result.get(
+        "required",
+        []
+    )
+
+
+    if not isinstance(
+        required,
+        list
+    ):
+
+        required = [
+            str(required)
+        ]
+
+
+    # --------------------------------------------------------
+    # Steps
+    # --------------------------------------------------------
+
+    steps = ai_result.get(
+        "steps",
+        []
+    )
+
+
+    if not isinstance(
+        steps,
+        list
+    ):
+
+        steps = [
+            str(steps)
+        ]
+
+
+    # --------------------------------------------------------
+    # Hints
+    # --------------------------------------------------------
+
+    hints = ai_result.get(
+        "hints",
+        []
+    )
+
+
+    if not isinstance(
+        hints,
+        list
+    ):
+
+        hints = [
+            str(hints)
+        ]
+
+
+    # --------------------------------------------------------
+    # Feedback
+    # --------------------------------------------------------
+
+    feedback = ai_result.get(
+        "feedback",
+        []
+    )
+
+
+    if not isinstance(
+        feedback,
+        list
+    ):
+
+        feedback = [
+            str(feedback)
+        ]
+
+
+    # --------------------------------------------------------
+    # Stable response
+    # --------------------------------------------------------
 
     return {
 
-        "status": "success",
+        "status":
+            "success",
 
         "topic":
-            ai_result.get(
-                "topic",
-                "Topic not identified"
+            str(
+                ai_result.get(
+                    "topic",
+                    "Topic not identified"
+                )
             ),
 
         "concept":
-            ai_result.get(
-                "concept",
-                ""
+            str(
+                ai_result.get(
+                    "concept",
+                    ""
+                )
             ),
 
         "formula":
-            ai_result.get(
-                "formula",
-                "No formula required."
+            str(
+                ai_result.get(
+                    "formula",
+                    "No formula required."
+                )
             ),
 
         "given":
-            ai_result.get(
-                "given",
-                []
-            ),
+            given,
 
         "required":
-            ai_result.get(
-                "required",
-                []
-            ),
+            required,
 
         "steps":
-            ai_result.get(
-                "steps",
-                []
-            ),
+            steps,
 
         "hints":
-            ai_result.get(
-                "hints",
-                []
-            ),
+            hints,
 
         "feedback":
-            ai_result.get(
-                "feedback",
-                []
-            ),
+            feedback,
 
-        # Always empty by design.
+        # ----------------------------------------------------
+        # Final answer is ALWAYS hidden.
+        # ----------------------------------------------------
 
-        "final_answer": ""
+        "final_answer":
+            ""
 
     }
 
@@ -458,26 +923,35 @@ def normalise_result(ai_result):
 # TEST AI CONNECTION
 # ============================================================
 
-@app.route("/test-ai")
+@app.route(
+    "/test-ai"
+)
 def test_ai():
 
     try:
 
         result = analyse_text_question(
-            "What is molarity? Give the topic, formula "
-            "and one learning hint."
+
+            "What is molarity? "
+            "Identify the topic, concept, formula "
+            "and one useful learning hint. "
+            "Do not give a final answer."
+
         )
 
 
         return jsonify({
 
-            "status": "success",
+            "status":
+                "success",
 
             "message":
                 "OpenRouter connection successful.",
 
             "ai_response":
-                result
+                normalise_result(
+                    result
+                )
 
         })
 
@@ -486,9 +960,11 @@ def test_ai():
 
         return jsonify({
 
-            "status": "error",
+            "status":
+                "error",
 
-            "message": str(e)
+            "message":
+                str(e)
 
         }), 500
 
@@ -506,7 +982,7 @@ def ask():
     try:
 
         # ====================================================
-        # CASE 1 — IMAGE UPLOAD
+        # CASE 1 — IMAGE
         # ====================================================
 
         if "file" in request.files:
@@ -520,7 +996,8 @@ def ask():
 
                 return jsonify({
 
-                    "status": "error",
+                    "status":
+                        "error",
 
                     "message":
                         "No image was received."
@@ -532,7 +1009,8 @@ def ask():
 
                 return jsonify({
 
-                    "status": "error",
+                    "status":
+                        "error",
 
                     "message":
                         "No file was selected."
@@ -540,20 +1018,27 @@ def ask():
                 }), 400
 
 
-            # Read image.
+            # ------------------------------------------------
+            # Read image
+            # ------------------------------------------------
 
             image_bytes = (
                 uploaded_file.read()
             )
 
 
-            # Check size.
+            # ------------------------------------------------
+            # Check image size
+            # ------------------------------------------------
 
-            if len(image_bytes) > MAX_FILE_SIZE:
+            if len(
+                image_bytes
+            ) > MAX_FILE_SIZE:
 
                 return jsonify({
 
-                    "status": "error",
+                    "status":
+                        "error",
 
                     "message":
                         "Image is too large. "
@@ -562,29 +1047,64 @@ def ask():
                 }), 400
 
 
-            # Determine MIME type.
+            # ------------------------------------------------
+            # Determine MIME type
+            # ------------------------------------------------
 
             mime_type = (
                 uploaded_file
                 .mimetype
                 .lower()
+                .strip()
             )
 
 
+            # ------------------------------------------------
+            # iOS/browser fallback
+            # ------------------------------------------------
+
             if mime_type not in ALLOWED_IMAGE_TYPES:
 
-                return jsonify({
-
-                    "status": "error",
-
-                    "message":
-                        "For Stage 2A, please upload "
-                        "a JPG, JPEG or PNG image."
-
-                }), 400
+                filename = (
+                    uploaded_file
+                    .filename
+                    .lower()
+                )
 
 
-            # Send image to OpenRouter.
+                if (
+                    filename.endswith(".jpg")
+                    or
+                    filename.endswith(".jpeg")
+                ):
+
+                    mime_type = "image/jpeg"
+
+
+                elif filename.endswith(
+                    ".png"
+                ):
+
+                    mime_type = "image/png"
+
+
+                else:
+
+                    return jsonify({
+
+                        "status":
+                            "error",
+
+                        "message":
+                            "For Stage 2A, please upload "
+                            "a JPG, JPEG or PNG image."
+
+                    }), 400
+
+
+            # ------------------------------------------------
+            # Send image to OpenRouter
+            # ------------------------------------------------
 
             ai_result = (
                 analyse_image_question(
@@ -595,12 +1115,14 @@ def ask():
 
 
             return jsonify(
-                normalise_result(ai_result)
+                normalise_result(
+                    ai_result
+                )
             )
 
 
         # ====================================================
-        # CASE 2 — NORMAL TEXT QUESTION
+        # CASE 2 — TEXT QUESTION
         # ====================================================
 
         data = request.get_json(
@@ -612,7 +1134,8 @@ def ask():
 
             return jsonify({
 
-                "status": "error",
+                "status":
+                    "error",
 
                 "message":
                     "No question received."
@@ -632,7 +1155,8 @@ def ask():
 
             return jsonify({
 
-                "status": "error",
+                "status":
+                    "error",
 
                 "message":
                     "Please enter a Chemistry question."
@@ -640,7 +1164,9 @@ def ask():
             }), 400
 
 
-        # Analyse typed question.
+        # ----------------------------------------------------
+        # Analyse text
+        # ----------------------------------------------------
 
         ai_result = (
             analyse_text_question(
@@ -650,36 +1176,53 @@ def ask():
 
 
         return jsonify(
-            normalise_result(ai_result)
+            normalise_result(
+                ai_result
+            )
         )
 
 
     except Exception as e:
 
+        error_message = str(e)
+
+
         return jsonify({
 
-            "status": "error",
+            "status":
+                "error",
 
-            "message": str(e),
+            "message":
+                error_message,
 
             "topic":
                 "AI processing problem",
 
-            "formula": "",
+            "concept":
+                "",
 
-            "given": [],
+            "formula":
+                "",
 
-            "required": [],
+            "given":
+                [],
 
-            "steps": [],
+            "required":
+                [],
 
-            "hints": [],
+            "steps":
+                [],
 
-            "feedback": [
-                str(e)
-            ],
+            "hints":
+                [],
 
-            "final_answer": ""
+            "feedback":
+                [
+                    error_message
+                ],
+
+            "final_answer":
+                ""
 
         }), 500
 
@@ -705,4 +1248,5 @@ if __name__ == "__main__":
         port=port,
 
         debug=False
+
     )
