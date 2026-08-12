@@ -1,0 +1,16 @@
+{
+    "name": "BikkyChem AI",
+    "short_name": "BikkyChem",
+    "description": "AI-powered Chemistry guidance for students through topics, formulas, steps and hints.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#f4f7fb",
+    "theme_color": "#0f4c81",
+    "lang": "en-IN",
+    "categories": [
+        "education",
+        "science"
+    ]
+}
